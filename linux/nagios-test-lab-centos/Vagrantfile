@@ -14,15 +14,29 @@ if not plugins_to_install.empty?
 end
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "centos/7"
-
   config.vbguest.installer_arguments = %w{--nox11}
 
   config.vm.define :server do |srv|
+    srv.vm.box = "centos/7"
     srv.vm.hostname = "nagios-server"
+    srv.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
     srv.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
     srv.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-intnet"
     srv.vm.network "forwarded_port", guest: 80, host: 8080
     srv.vm.provision "shell", path: "server-provision"
+  end
+
+  config.vm.define "client-ubuntu" do |cubuntu|
+    cubuntu.vm.box = "ubuntu/trusty64"
+    cubuntu.vm.hostname = "nagios-ubuntu"
+    cubuntu.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    # cubuntu.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    cubuntu.vm.network "private_network", ip: "192.168.199.11", virtualbox__intnet: "vagrant-intnet"
+    # cubuntu.vm.network "forwarded_port", guest: 80, host: 8080
+    cubuntu.vm.provision "shell", path: "client-ubuntu-provision"
   end
 end

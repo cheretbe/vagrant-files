@@ -54,6 +54,9 @@ htpasswd -cb /usr/local/nagios/etc/htpasswd.users nagiosadmin vagrant
 service httpd start
 service nagios start
 
+chkconfig httpd on
+chkconfig nagios on
+
 #!!!!!!!!!!!!!!!!!
 #fi
 
