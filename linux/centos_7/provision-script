@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# wget https://github.com/cheretbe/vagrant-files/raw/master/linux/provision/centos-provision.sh -O - | bash
+# -L   Follow redirects
+# -s   Silent mode. Don't output anything
+curl -L -s https://github.com/cheretbe/vagrant-files/raw/master/linux/provision/centos-provision.sh -o - | bash

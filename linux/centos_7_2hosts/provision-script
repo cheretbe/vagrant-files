@@ -2,16 +2,9 @@
 
 set -euo pipefail
 
-# Disable SELinux
-if [ $(getenforce) != "Disabled" ]; then
-  echo "Disabling SELinux"
-  setenforce 0
-  sed -i s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
-fi
-
-yum update -y
-yum install -y epel-release
-yum install -y mc nano wget net-tools htop
+# -L   Follow redirects
+# -s   Silent mode. Don't output anything
+curl -L -s https://github.com/cheretbe/vagrant-files/raw/master/linux/provision/centos-provision.sh -o - | bash
 
 if [ $(hostname -s) == "host1" ]; then
   other_host_name="host2"
