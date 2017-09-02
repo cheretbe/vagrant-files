@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+apt-get update
+
+apt-get install -y nagios-plugins nagios-nrpe-server nsca-client
+
+#echo -e "foo.example.com\ttest\t0\t0" | /usr/sbin/send_nsca -H 192.168.199.10
