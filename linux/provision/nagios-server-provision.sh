@@ -12,4 +12,4 @@ else
   exit 1
 fi
 
-echo ${distro}
+# echo ${distro}
