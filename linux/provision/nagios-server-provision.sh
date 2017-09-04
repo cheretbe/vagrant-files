@@ -16,6 +16,15 @@ fi
 # https://support.nagios.com/kb/article/nsca-server-centos-6-5-and-nagios-core-4-0-x.html
 # ../nagios-test-lab-centos/server-provision.old.2del 
 
+if [ ${distro} == "centos" ]; then
+  apache_service_name="httpd"
+  apache_user_name="apache"
+else
+  apache_service_name="apache2"
+  apache_user_name="www-data"
+fi
+
+
 echo "Fetching versions"
 nagios_version=($(curl -s "https://www.nagios.org/checkforupdates/?product=nagioscore"| grep -Eo "is [0-9]{1}\.[0-9]{1}\.[0-9]{1}"))
 nagios_version=${nagios_version[1]}
@@ -48,7 +57,8 @@ if [ ${install_nagios_core} -ne 0 ]; then
   if [ ${distro} == "centos" ]; then
    yum install -y gcc glibc glibc-common wget unzip httpd php gd gd-devel
   else
-    apt update
+    apt-get update
+    apt-get install -y autoconf gcc libc6 make wget unzip apache2 php libapache2-mod-php7.0 libgd2-xpm-dev
   fi
 
   mkdir -p ~/temp/source
@@ -60,7 +70,7 @@ if [ ${install_nagios_core} -ne 0 ]; then
 
   if [ ${core_upgrade_mode} -ne 1 ]; then
     useradd nagios
-    usermod -a -G nagios apache
+    usermod -a -G nagios ${apache_user_name}
   fi
 
   cd nagioscore-nagios-${nagios_version}
@@ -68,8 +78,8 @@ if [ ${install_nagios_core} -ne 0 ]; then
   make all
 
   if [ ${core_upgrade_mode} -eq 1 ]; then
-    systemctl stop httpd.service
-    systemctl stop nagios.service
+    service ${apache_service_name} stop
+    service nagios stop
   fi
 
   make install
@@ -80,14 +90,21 @@ if [ ${install_nagios_core} -ne 0 ]; then
     make install-config
     make install-webconf
 
-    systemctl enable nagios.service
-    systemctl enable httpd.service
+    if [ ${distro} == "centos" ]; then
+      systemctl enable nagios.service
+      systemctl enable httpd.service
+    else
+      update-rc.d nagios defaults
+      service apache2 stop
+      a2enmod rewrite
+      a2enmod cgi
+    fi
 
     htpasswd -b -c /usr/local/nagios/etc/htpasswd.users nagiosadmin vagrant
   fi
 
-  systemctl start httpd.service
-  systemctl start nagios.service
+  service ${apache_service_name} start
+  service nagios start
 fi #install_nagios_core
 
 install_plugins=1
@@ -107,7 +124,8 @@ if [ ${install_plugins} -ne 0 ]; then
   if [ ${distro} == "centos" ]; then
    yum install -y gcc glibc glibc-common make gettext automake autoconf wget openssl-devel net-snmp net-snmp-utils epel-release perl-Net-SNMP
   else
-    apt update
+    apt-get update
+    apt-get -y install autoconf gcc libc6 libmcrypt-dev make libssl-dev wget bc gawk dc build-essential snmp libnet-snmp-perl gettext
   fi
 
   echo "Downloading release-${plugins_version}.tar.gz"
@@ -118,7 +136,7 @@ if [ ${install_plugins} -ne 0 ]; then
   ./tools/setup
   ./configure
   make
-  systemctl stop nagios.service
+  service nagios stop
   make install
-  systemctl start nagios.service
+  service nagios start
 fi #install_plugins
