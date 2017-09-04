@@ -3,3 +3,4 @@
 set -euo pipefail
 
 /home/vagrant/provision/centos-provision.sh
+/home/vagrant/provision/nagios-server-provision.sh
