@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-apt-get update
+/home/vagrant/provision/ubuntu-provision.sh
 
-apt-get install -y nagios-plugins nagios-nrpe-server nsca-client
-
-#echo -e "foo.example.com\ttest\t0\t0" | /usr/sbin/send_nsca -H 192.168.199.10
+apt-get -y install nagios-plugins nagios-nrpe-server nsca-client

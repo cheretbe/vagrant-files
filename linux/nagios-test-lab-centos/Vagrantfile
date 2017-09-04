@@ -35,6 +35,7 @@ Vagrant.configure("2") do |config|
     cubuntu.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
+    config.vm.synced_folder "../provision/", "/home/vagrant/provision"
     cubuntu.vm.network "private_network", ip: "192.168.199.11", virtualbox__intnet: "vagrant-intnet"
     cubuntu.vm.provision "shell", path: "client-ubuntu-provision"
   end
