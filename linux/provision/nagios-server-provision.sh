@@ -12,6 +12,10 @@ else
   exit 1
 fi
 
+# TODO: NSCA server
+# https://support.nagios.com/kb/article/nsca-server-centos-6-5-and-nagios-core-4-0-x.html
+# ../nagios-test-lab-centos/server-provision.old.2del 
+
 echo "Fetching versions"
 nagios_version=($(curl -s "https://www.nagios.org/checkforupdates/?product=nagioscore"| grep -Eo "is [0-9]{1}\.[0-9]{1}\.[0-9]{1}"))
 nagios_version=${nagios_version[1]}
