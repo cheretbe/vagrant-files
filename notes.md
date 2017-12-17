@@ -1,3 +1,4 @@
+```ruby
 system('./myscript.sh')
 
 if Vagrant::Util::Platform.windows? then
@@ -9,3 +10,4 @@ end
 Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: "\"#{ENV['UPSTART_SESSION']}\" | Out-File 'c:\\users\\vagrant\\test.txt'"
 end
+```
