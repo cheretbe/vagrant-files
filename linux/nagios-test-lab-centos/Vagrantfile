@@ -22,7 +22,8 @@ Vagrant.configure("2") do |config|
     srv.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    srv.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    # srv.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    config.vm.synced_folder "../provision/", "/home/vagrant/provision"
     srv.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-intnet"
     srv.vm.network "forwarded_port", guest: 80, host: 8080
     srv.vm.provision "shell", path: "server-provision"
@@ -34,6 +35,7 @@ Vagrant.configure("2") do |config|
     cubuntu.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
+    config.vm.synced_folder "../provision/", "/home/vagrant/provision"
     cubuntu.vm.network "private_network", ip: "192.168.199.11", virtualbox__intnet: "vagrant-intnet"
     cubuntu.vm.provision "shell", path: "client-ubuntu-provision"
   end
