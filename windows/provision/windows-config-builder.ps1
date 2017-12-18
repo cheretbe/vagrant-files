@@ -17,9 +17,9 @@ if ($offline.IsPresent) {
   $repoPath = "https://raw.githubusercontent.com/cheretbe/vagrant-files"
   $gitBranch = if ($develop.IsPresent) { "develop" } else { "master" }
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString(
-    ("{}/{}/windows/provision/chocolatey.ps1" -f $repoPath, $gitBranch)))
+    ("{0}/{1}/windows/provision/chocolatey.ps1" -f $repoPath, $gitBranch)))
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString(
-    ("{}/{}/windows/provision/git.ps1" -f $repoPath, $gitBranch)))
+    ("{0}/{1}/windows/provision/git.ps1" -f $repoPath, $gitBranch)))
 } #if
 
 New-Item -ItemType Directory -Path ($env:USERPROFILE + "\projects") -Force | Out-Null 
