@@ -14,10 +14,10 @@ param(
 
 if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $NULL) {
   Write-Output "Git is not installed. Installing"
-  RunConsoleCommand -command "choco.exe" -parameters @("install", "git", "-y")
+  RunConsoleCommand -command "choco.exe" -parameters @("install", "git", "-y", "--no-progress")
   $env:Path = $env:Path + ";" + $env:ProgramFiles + "\Git\cmd"
 
-  RunConsoleCommand -command "choco.exe" -parameters @("install", "git-credential-manager-for-windows", "-y")
+  RunConsoleCommand -command "choco.exe" -parameters @("install", "git-credential-manager-for-windows", "-y", "--no-progress")
 
   RunConsoleCommand -command "git.exe" -parameters @("config", "--global", "user.useConfigOnly", "true")
   # RunConsoleCommand -command "git.exe" -parameters @("config", "--global", "credential.helper", "store")
