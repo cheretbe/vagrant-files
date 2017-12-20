@@ -10,4 +10,10 @@ end
 Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: "\"#{ENV['UPSTART_SESSION']}\" | Out-File 'c:\\users\\vagrant\\test.txt'"
 end
+
+git_branch = `git rev-parse --abbrev-ref HEAD`
+if git_branch .eql? "develop\n" then
+  provision_param = "-local"
+else
+  provision_param = ""
 ```
