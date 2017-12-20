@@ -1,3 +1,7 @@
+# Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/cheretbe/vagrant-files/master/windows/provision/chocolatey.ps1'))
+# Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/chocolatey.ps1'))
+Invoke-Command -ScriptBlock ([scriptblock]::Create((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/windows-config-builder.ps1"))) -ArgumentList $TRUE
+
 [CmdletBinding()]
 param(
   [switch]$offline,
