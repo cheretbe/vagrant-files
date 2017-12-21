@@ -17,3 +17,6 @@ if git_branch .eql? "develop\n" then
 else
   provision_param = ""
 ```
+```powershell
+[scriptblock]::Create((Get-Content "C:\users\vagrant\Documents\gist.txt" | Out-String)).Invoke("windows-config-builder.ps1", $True)
+```
