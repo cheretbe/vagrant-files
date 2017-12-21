@@ -1,9 +1,10 @@
-<#
-[scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString(
-  "https://gist.githubusercontent.com/cheretbe/1965da139998cdc31e89759a9d33a0d4/raw/"))).Invoke(
-    "windows-config-builder.ps1", $True
-  )
->#
+#[scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m"))).Invoke("windows-config-builder.ps1", $True)
+
+#[scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString(
+#  "https://gist.githubusercontent.com/cheretbe/1965da139998cdc31e89759a9d33a0d4/raw/"))).Invoke(
+#    "windows-config-builder.ps1", $True
+#  )
+
 
 # Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/cheretbe/vagrant-files/master/windows/provision/chocolatey.ps1'))
 # Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/chocolatey.ps1'))
@@ -11,10 +12,10 @@
 # Invoke-Command -ScriptBlock ([scriptblock]::Create((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/cheretbe/vagrant-files/master/windows/provision/windows-config-builder.ps1")))
 # Invoke-Command -ScriptBlock ([scriptblock]::Create((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/windows-config-builder.ps1"))) -ArgumentList @($TRUE)
 
-# [CmdletBinding()]
-# param(
-  # [bool]$develop = $FALSE
-# )
+[CmdletBinding()]
+param(
+  [bool]$develop = $FALSE
+)
 
 Write-Host "there you go" -Fore Cyan
 
@@ -24,7 +25,7 @@ $Host.PrivateData.VerboseForegroundColor = [ConsoleColor]::DarkCyan
 
 $script:scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-if (Test-Path -Path (Join-Path - Path $script:scriptDir -ChildPath "chocolatey.ps1")) {
+if (Test-Path -Path (Join-Path -Path $script:scriptDir -ChildPath "chocolatey.ps1")) {
   . (Join-Path -Path $script:scriptDir -ChildPath "chocolatey.ps1")
   . (Join-Path -Path $script:scriptDir -ChildPath "git.ps1")
 } else {
