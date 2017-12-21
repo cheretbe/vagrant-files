@@ -1,11 +1,12 @@
 # Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/cheretbe/vagrant-files/master/windows/provision/chocolatey.ps1'))
 # Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/chocolatey.ps1'))
-Invoke-Command -ScriptBlock ([scriptblock]::Create((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/windows-config-builder.ps1"))) -ArgumentList $TRUE
+
+# Invoke-Command -ScriptBlock ([scriptblock]::Create((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/cheretbe/vagrant-files/master/windows/provision/windows-config-builder.ps1")))
+# Invoke-Command -ScriptBlock ([scriptblock]::Create((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/cheretbe/vagrant-files/develop/windows/provision/windows-config-builder.ps1"))) -ArgumentList @($TRUE)
 
 [CmdletBinding()]
 param(
-  [switch]$offline,
-  [switch]$develop
+  [bool]$develop = $FALSE
 )
 
 Set-StrictMode -Version Latest
@@ -14,12 +15,12 @@ $Host.PrivateData.VerboseForegroundColor = [ConsoleColor]::DarkCyan
 
 $script:scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-if ($offline.IsPresent) {
+if (Test-Path -Path (Join-Path - Path $script:scriptDir -ChildPath "chocolatey.ps1")) {
   . (Join-Path -Path $script:scriptDir -ChildPath "chocolatey.ps1")
   . (Join-Path -Path $script:scriptDir -ChildPath "git.ps1")
 } else {
   $repoPath = "https://raw.githubusercontent.com/cheretbe/vagrant-files"
-  $gitBranch = if ($develop.IsPresent) { "develop" } else { "master" }
+  $gitBranch = if ($develop) { "develop" } else { "master" }
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString(
     ("{0}/{1}/windows/provision/chocolatey.ps1" -f $repoPath, $gitBranch)))
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString(
