@@ -14,10 +14,9 @@
 
 [CmdletBinding()]
 param(
-  [bool]$develop = $FALSE
+  [bool]$develop = $FALSE,
+  [switch]$localTest
 )
-
-Write-Host "there you go" -Fore Cyan
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
@@ -25,7 +24,11 @@ $Host.PrivateData.VerboseForegroundColor = [ConsoleColor]::DarkCyan
 
 $script:scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-if (Test-Path -Path (Join-Path -Path $script:scriptDir -ChildPath "chocolatey.ps1")) {
+if ($localTest.IsPresent) {
+  Write-Verbose ("Local testing mode")
+  Invoke-Expression ((Get-Content -Path (${Env:USERPROFILE} + '/provision/chocolatey.ps1') | Out-String))
+  Invoke-Expression ((Get-Content -Path (${Env:USERPROFILE} + '/provision/git.ps1') | Out-String))
+} elseif (Test-Path -Path (Join-Path -Path $script:scriptDir -ChildPath "chocolatey.ps1")) {
   . (Join-Path -Path $script:scriptDir -ChildPath "chocolatey.ps1")
   . (Join-Path -Path $script:scriptDir -ChildPath "git.ps1")
 } else {
