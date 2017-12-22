@@ -18,5 +18,6 @@ else
   provision_param = ""
 ```
 ```powershell
+[scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m"))).Invoke("windows-config-builder.ps1", $True, @{"localTest" = $TRUE; "Verbose" = $TRUE})
 [scriptblock]::Create((Get-Content "C:\users\vagrant\Documents\gist.txt" | Out-String)).Invoke("windows-config-builder.ps1", $True)
 ```
