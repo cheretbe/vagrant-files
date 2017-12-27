@@ -43,5 +43,24 @@ param(
   } #if
 }
 
+function Invoke-VagrantProvisionConsoleCommand {
+[CmdletBinding()]
+param(
+  [string]$command,
+  [string[]]$parameters
+)
+  $oldErrorActionPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Continue
+    Write-Verbose($command + " <" + ($parameters -join "> <") + ">")
+    & $command $parameters
+    if ($LASTEXITCODE -ne 0)
+      { throw ('Error calling "{0}" "{1}"' -f $command, ($parameters -join '" "')) }
+  } finally {
+    $ErrorActionPreference = $oldErrorActionPreference
+  }
+}
+
 Export-ModuleMember -Function Set-VagrantProvisionLocalTestMode
 Export-ModuleMember -Function Invoke-VagrantProvisionScript
+Export-ModuleMember -Function Invoke-VagrantProvisionConsoleCommand
