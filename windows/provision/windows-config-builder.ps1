@@ -29,4 +29,13 @@ if (-not(Test-Path -Path "./windows-config")) {
 Set-Location -Path "./windows-config"
 Invoke-VagrantProvisionConsoleCommand -command "git.exe" -parameters @("checkout", "develop")
 Invoke-VagrantProvisionConsoleCommand -command "git.exe" -parameters @("status")
-# RunConsoleCommand -command "git.exe" -parameters @("checkout", "-t", "origin/develop")
+
+if (Test-Path -Path "c:\vagrant") {
+  if ($NULL -eq (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Command Processor" `
+      -Name "AutoRun" -ErrorAction SilentlyContinue)) {
+    Write-Host "Writing autorun registry entry for setting environment variables"
+    New-ItemProperty -Path "HKCU:\Software\Microsoft\Command Processor" `
+      -Name "AutoRun" -Value "c:\vagrant\temp\set_variables.bat" `
+      -PropertyType ([Microsoft.Win32.RegistryValueKind]::String) -Force | Out-Null
+  } #if
+} #if

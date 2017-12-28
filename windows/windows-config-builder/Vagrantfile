@@ -15,9 +15,5 @@ Vagrant.configure("2") do |config|
   config.winrm.username = "vagrant"
   config.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
   config.vm.synced_folder "#{provision_dir}", "c:/users/vagrant/provision"
-  # config.vm.provision "file", source: "temp/set_variables.bat", destination: "set_variables.bat"
-  # config.vm.provision "shell", inline: "New-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Command Processor' -Name 'AutoRun' -Value 'c:\\users\\vagrant\\Documents\\set_variables.bat' -PropertyType ([Microsoft.Win32.RegistryValueKind]::String) -Force | Out-Null"
-  # config.vm.provision "shell", path: "../provision/windows-config-builder.ps1", args: provision_param
-  # config.vm.provision "shell", inline: "& c:\\users\\vagrant\\provision\\windows-config-builder.bat"
   config.vm.provision "shell", inline: "& c:\\users\\vagrant\\provision\\windows-config-builder.ps1"
 end
