@@ -4,12 +4,12 @@ env_var_names=( "AO_DEFAULT_GITHUB_USER" "AO_DEFAULT_GITHUB_TOKEN"
   "AO_DEFAULT_GITHUB_EMAIL"
 )
 
-output_lines=( '@ECHO OFF' )
+output_lines=()
 
 for env_var in "${env_var_names[@]}"
 do
   if ! [ -z ${!env_var+x} ]; then
-    output_lines+=( "SET ${env_var}=${!env_var}" )
+    output_lines+=( "${env_var}=${!env_var}" )
   fi
 done
 
