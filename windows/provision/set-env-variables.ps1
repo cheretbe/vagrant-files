@@ -21,6 +21,7 @@ param(
 )
   New-ItemProperty -Path "HKCU:\Environment" -Name $varName -Value $varValue `
     -PropertyType ([Microsoft.Win32.RegistryValueKind]::String) -Force | Out-Null
+  Set-Item -Path ("Env:\{0}" -f $varName) -value $varValue
 }
 
 if (Test-Path -Path "c:\vagrant\temp\env_variables.txt") {
