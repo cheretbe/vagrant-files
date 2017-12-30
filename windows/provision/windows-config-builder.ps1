@@ -39,3 +39,13 @@ if (Test-Path -Path "c:\vagrant") {
       -PropertyType ([Microsoft.Win32.RegistryValueKind]::String) -Force | Out-Null
   } #if
 } #if
+
+if (-not(Get-Module "AWSPowerShell" -ListAvailable)) {
+  Write-Host "Installing NuGet package provider"
+  Install-PackageProvider -Name NuGet -Force
+  Write-Host "Installing AWS Tools for Windows PowerShell"
+  Install-Module "AWSPowerShell" -Force
+} #if
+
+Import-Module AWSPowerShell
+Get-AWSPowerShellVersion
