@@ -17,6 +17,7 @@ Import-Module (Join-Path -Path $script:scriptDir -ChildPath "common.psm1")
 
 Invoke-VagrantProvisionScript -scriptName "chocolatey.ps1"
 Invoke-VagrantProvisionScript -scriptName "git.ps1"
+Invoke-VagrantProvisionScript -scriptName "set-env-variables.ps1"
 
 New-Item -ItemType Directory -Path ($env:USERPROFILE + "\projects") -Force | Out-Null 
 Set-Location -Path ($env:USERPROFILE + "\projects")

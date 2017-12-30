@@ -8,7 +8,8 @@ $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 $Host.PrivateData.VerboseForegroundColor = [ConsoleColor]::DarkCyan
 
 $envVarNames= @("AO_DEFAULT_GITHUB_USER", "AO_DEFAULT_GITHUB_TOKEN",
-  "AO_DEFAULT_GITHUB_EMAIL"
+  "AO_DEFAULT_GITHUB_EMAIL", "AO_DEFAULT_GITLAB_USER", "AO_DEFAULT_GITLAB_EMAIL",
+  "AO_DEFAULT_GITLAB_PASSWORD"
 )
 $outputLines = @()
 
