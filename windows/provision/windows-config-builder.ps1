@@ -31,16 +31,6 @@ Set-Location -Path "./windows-config"
 Invoke-VagrantProvisionConsoleCommand -command "git.exe" -parameters @("checkout", "develop")
 Invoke-VagrantProvisionConsoleCommand -command "git.exe" -parameters @("status")
 
-if (Test-Path -Path "c:\vagrant") {
-  if ($NULL -eq (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Command Processor" `
-      -Name "AutoRun" -ErrorAction SilentlyContinue)) {
-    Write-Host "Writing autorun registry entry for setting environment variables"
-    New-ItemProperty -Path "HKCU:\Software\Microsoft\Command Processor" `
-      -Name "AutoRun" -Value "c:\vagrant\temp\set_variables.bat" `
-      -PropertyType ([Microsoft.Win32.RegistryValueKind]::String) -Force | Out-Null
-  } #if
-} #if
-
 if (-not(Get-Module "AWSPowerShell" -ListAvailable)) {
   Write-Host "Installing NuGet package provider"
   Install-PackageProvider -Name NuGet -Force
