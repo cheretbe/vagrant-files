@@ -42,3 +42,11 @@ if (Test-Path -Path "c:\vagrant\temp\env_variables.txt") {
   [provision.win32]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE,
     [uintptr]::Zero, "Environment", 2, 5000, [ref]$result) | Out-Null
 } #if
+
+# $taskAction = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c dir c:\"
+# $task = New-ScheduledTask -Action $taskAction -Settings (New-ScheduledTaskSettingsSet)
+# $task | Register-ScheduledTask -TaskName "test" -User "vagrant" | Out-Null
+
+# $dummy = Get-ScheduledTask -TaskName "test" | Get-ScheduledTaskInfo
+# $dummy.LastRunTime -eq [datetime]::ParseExact("1999-11-30 00:00:00", "yyyy-MM-dd HH:mm:ss", $NULL)
+# (Get-ScheduledTask -TaskName "test").State -eq [Microsoft.PowerShell.Cmdletization.GeneratedTypes.ScheduledTask.StateEnum]::Ready
