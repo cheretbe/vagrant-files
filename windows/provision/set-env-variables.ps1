@@ -1,5 +1,7 @@
 [CmdletBinding()]
-param()
+param(
+  [switch]$SettingChangeMessageOnly
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
@@ -24,6 +26,24 @@ param(
   Set-Item -Path ("Env:\{0}" -f $varName) -value $varValue
 }
 
+  # Notifies all windows of environment block change
+function SendSettingChangeMessage {
+param()
+  $HWND_BROADCAST = [intptr]0xFFFF;
+  $WM_SETTINGCHANGE = 0x1A;
+  $result = [uintptr]::zero
+
+  [provision.win32]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE,
+    [uintptr]::Zero, "Environment", 2, 5000, [ref]$result) | Out-Null
+}
+
+if ($SettingChangeMessageOnly.IsPresent) {
+  Write-Host "Senging WM_SETTINGCHANGE message"
+  SendSettingChangeMessage
+  exit 0
+}
+
+
 if (Test-Path -Path "c:\vagrant\temp\env_variables.txt") {
   Write-Host "Setting environment variables"
   foreach($line in Get-Content "c:\vagrant\temp\env_variables.txt") {
@@ -34,19 +54,34 @@ if (Test-Path -Path "c:\vagrant\temp\env_variables.txt") {
     } #if
   } #foreach
 
-  $HWND_BROADCAST = [intptr]0xFFFF;
-  $WM_SETTINGCHANGE = 0x1A;
-  $result = [uintptr]::zero
+  SendSettingChangeMessage
+  if (-not([Environment]::UserInteractive)) {
+    # Running in non-interactive environment (WinRM or scheduled task)
+    # This means the script runs in a separate user session, other than GUI
+    # of the currently logged in user, and broadcast message is not going to
+    # reach exporer process.
+    # To force environment variables update in the GUI session we create a
+    # temporary scheduled task that will run as currently logged in user and
+    # will be able to send broadcast message
 
-  # Notify all windows of environment block change
-  [provision.win32]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE,
-    [uintptr]::Zero, "Environment", 2, 5000, [ref]$result) | Out-Null
+    Write-Host "Creating and running scheduled task to send WM_SETTINGCHANGE message"
+    $taskAction = New-ScheduledTaskAction -Execute "powershell.exe" `
+      -Argument ('-ExecutionPolicy Bypass -NoProfile -File "{0}" -SettingChangeMessageOnly' -f $MyInvocation.MyCommand.Path)
+    $task = New-ScheduledTask -Action $taskAction -Settings (New-ScheduledTaskSettingsSet)
+    $task | Register-ScheduledTask -TaskName "provision_env_vars_update" -User "vagrant" | Out-Null
+
+    Start-ScheduledTask -TaskName "provision_env_vars_update"
+
+    $emptyDate = [datetime]::ParseExact("1999-11-30 00:00:00", "yyyy-MM-dd HH:mm:ss", $NULL)
+    $readyState = [Microsoft.PowerShell.Cmdletization.GeneratedTypes.ScheduledTask.StateEnum]::Ready
+    do {
+      $task = Get-ScheduledTask -TaskName "provision_env_vars_update"
+      $taskHasFinished = ($task.State -eq $readyState) -and (($task | Get-ScheduledTaskInfo).LastRunTime -ne $emptyDate)
+      Start-Sleep -Seconds 1
+    } while (-not($taskHasFinished))
+
+    Write-Host "Deleting scheduled task"
+    Unregister-ScheduledTask -TaskName "provision_env_vars_update" -Confirm:$FALSE
+  } #if
 } #if
 
-# $taskAction = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c dir c:\"
-# $task = New-ScheduledTask -Action $taskAction -Settings (New-ScheduledTaskSettingsSet)
-# $task | Register-ScheduledTask -TaskName "test" -User "vagrant" | Out-Null
-
-# $dummy = Get-ScheduledTask -TaskName "test" | Get-ScheduledTaskInfo
-# $dummy.LastRunTime -eq [datetime]::ParseExact("1999-11-30 00:00:00", "yyyy-MM-dd HH:mm:ss", $NULL)
-# (Get-ScheduledTask -TaskName "test").State -eq [Microsoft.PowerShell.Cmdletization.GeneratedTypes.ScheduledTask.StateEnum]::Ready
