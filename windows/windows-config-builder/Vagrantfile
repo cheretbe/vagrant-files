@@ -14,6 +14,10 @@ Vagrant.configure("2") do |config|
   config.vm.box = "cheretbe/win10_en_64"
   config.winrm.username = "vagrant"
   config.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+  config.vm.provider "virtualbox" do |vb|
+    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+  end
   config.vm.boot_timeout = 600
   config.vm.synced_folder "#{provision_dir}", "c:/users/vagrant/provision"
   config.vm.provision "shell", inline: "& c:\\users\\vagrant\\provision\\windows-config-builder.ps1"
