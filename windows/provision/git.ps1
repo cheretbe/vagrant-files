@@ -7,9 +7,15 @@ param(
   [string]$command,
   [string[]]$parameters
 )
-  & $command $parameters
-  if ($LASTEXITCODE -ne 0)
-    { throw ('Error calling "{0}" "{1}"' -f $command, ($parameters -join '" "')) }
+  $oldErrorActionPreference = $script:ErrorActionPreference
+  try {
+    $script:ErrorActionPreference = [System.Management.Automation.ActionPreference]::Continue
+    & $command $parameters
+    if ($LASTEXITCODE -ne 0)
+      { throw ('Error calling "{0}" "{1}"' -f $command, ($parameters -join '" "')) }
+  } finally {
+    $script:ErrorActionPreference = $oldErrorActionPreference
+  }
 }
 
 if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $NULL) {
