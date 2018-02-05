@@ -19,6 +19,8 @@ Invoke-VagrantProvisionScript -scriptName "chocolatey.ps1"
 Invoke-VagrantProvisionScript -scriptName "git.ps1"
 Invoke-VagrantProvisionScript -scriptName "set-env-variables.ps1"
 
+Invoke-VagrantProvisionConsoleCommand -command "choco.exe" -parameters @("install", "Nuget.CommandLine", "-y", "--no-progress")
+
 New-Item -ItemType Directory -Path ($env:USERPROFILE + "\projects") -Force | Out-Null 
 Set-Location -Path ($env:USERPROFILE + "\projects")
 if (-not(Test-Path -Path "./windows-config")) {
