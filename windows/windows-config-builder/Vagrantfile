@@ -12,7 +12,7 @@ end
 
 if ENV['AO_PUBLISH_FILES_KEY_FILE'] != "" then
   if File.exist?(ENV["AO_PUBLISH_FILES_KEY_FILE"])
-    FileUtils.cp(ENV["AO_PUBLISH_FILES_KEY_FILE"], "./temp/publish_files.key");
+    FileUtils.cp(ENV["AO_PUBLISH_FILES_KEY_FILE"], "./temp/publish_files.ppk");
   end
 end
 
