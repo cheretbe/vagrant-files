@@ -26,8 +26,7 @@ $credentialsFile = (Join-Path -Path $env:USERPROFILE -ChildPath ".git-credential
 if ((Test-Path "Env:\AO_DEFAULT_GITLAB_USER") -and (Test-Path "Env:\AO_DEFAULT_GITLAB_PASSWORD")) {
   if ($NULL -eq (Get-Content $credentialsFile -ErrorAction SilentlyContinue | Where-Object { $_.Contains($script:gitlabHost) })) {
     Write-Host ("Adding credentials to '{0}'" -f $credentialsFile)
-    # Add-Content -Path $credentialsFile ("https://{0}:{1}@{2}`n" -f `
-    #   $Env:AO_DEFAULT_GITLAB_USER, $Env:AO_DEFAULT_GITLAB_PASSWORD, $script:gitlabHost)
+    # Note Linux-style line ending. It is necessary for git to recognize the credentials
     [System.IO.File]::AppendAllText($credentialsFile, ("https://{0}:{1}@{2}`n" -f `
       $Env:AO_DEFAULT_GITLAB_USER, $Env:AO_DEFAULT_GITLAB_PASSWORD, $script:gitlabHost))
   } else {
