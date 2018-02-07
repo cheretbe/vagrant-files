@@ -21,6 +21,7 @@ Invoke-VagrantProvisionScript -scriptName "git.ps1"
 Invoke-VagrantProvisionScript -scriptName "set-env-variables.ps1"
 
 Invoke-VagrantProvisionConsoleCommand -command "choco.exe" -parameters @("install", "Nuget.CommandLine", "-y", "--no-progress")
+Invoke-VagrantProvisionConsoleCommand -command "choco.exe" -parameters @("install", "putty.portable", "-y", "--no-progress")
 
 $credentialsFile = (Join-Path -Path $env:USERPROFILE -ChildPath ".git-credentials")
 if ((Test-Path "Env:\AO_DEFAULT_GITLAB_USER") -and (Test-Path "Env:\AO_DEFAULT_GITLAB_PASSWORD")) {
