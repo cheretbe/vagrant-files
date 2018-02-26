@@ -1,23 +1,17 @@
-#. ([scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m")))) -scriptName "windows-config-builder.ps1"
-#. ([scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m")))) -scriptName "windows-config-builder.ps1" -gitBranch "develop"
-#. ([scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m")))) -scriptName "windows-config-builder.ps1" scriptParams @{"Verbose" = $TRUE} -localTest
-
 [CmdletBinding()]
 param()
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-$Host.PrivateData.VerboseForegroundColor = [ConsoleColor]::DarkCyan
-$Host.PrivateData.VerboseBackgroundColor = $Host.UI.RawUI.BackgroundColor
-$Host.PrivateData.WarningBackgroundColor = $Host.UI.RawUI.BackgroundColor
-$Host.PrivateData.ErrorBackgroundColor = $Host.UI.RawUI.BackgroundColor
 
 $script:scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Import-Module (Join-Path -Path $script:scriptDir -ChildPath "common.psm1")
+$script:gitlabHost = "git.beercaps.ru"
 
-Invoke-VagrantProvisionScript -scriptName "chocolatey.ps1"
-Invoke-VagrantProvisionScript -scriptName "git.ps1"
-Invoke-VagrantProvisionScript -scriptName "set-env-variables.ps1"
+Invoke-VagrantProvisionScript -scriptName "git.ps1" -scriptParams @{"saveGitlabCredentials" = $TRUE}
+
+Invoke-VagrantProvisionConsoleCommand -command "choco.exe" -parameters @("install", "Nuget.CommandLine", "-y", "--no-progress")
+Invoke-VagrantProvisionConsoleCommand -command "choco.exe" -parameters @("install", "putty.portable", "-y", "--no-progress")
 
 New-Item -ItemType Directory -Path ($env:USERPROFILE + "\projects") -Force | Out-Null 
 Set-Location -Path ($env:USERPROFILE + "\projects")
@@ -30,6 +24,18 @@ if (-not(Test-Path -Path "./windows-config")) {
 Set-Location -Path "./windows-config"
 Invoke-VagrantProvisionConsoleCommand -command "git.exe" -parameters @("checkout", "develop")
 Invoke-VagrantProvisionConsoleCommand -command "git.exe" -parameters @("status")
+
+if (Test-Path "Env:\AO_DEFAULT_GITLAB_USER") {
+  Write-Host ("Setting 'user.name' parameter to '{0}'" -f $Env:AO_DEFAULT_GITLAB_USER)
+  Invoke-VagrantProvisionConsoleCommand -command "git.exe" `
+    -parameters @("config", "user.name", $Env:AO_DEFAULT_GITLAB_USER)
+} #if
+
+if (Test-Path "Env:\AO_DEFAULT_GITLAB_EMAIL") {
+  Write-Host ("Setting 'user.email' parameter to '{0}'" -f $Env:AO_DEFAULT_GITLAB_EMAIL)
+  Invoke-VagrantProvisionConsoleCommand -command "git.exe" `
+    -parameters @("config", "user.email", $Env:AO_DEFAULT_GITLAB_EMAIL)
+} #if
 
 if (-not(Get-Module "AWSPowerShell" -ListAvailable)) {
   Write-Host "Installing NuGet package provider"

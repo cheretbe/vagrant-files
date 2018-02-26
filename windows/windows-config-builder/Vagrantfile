@@ -10,6 +10,12 @@ else
   system('../../host-scripts/generate_variables.sh ' + vagrant_file_dir + '/temp/env_variables.txt')
 end
 
+if ENV['AO_PUBLISH_FILES_KEY_FILE'] != "" then
+  if File.exist?(ENV["AO_PUBLISH_FILES_KEY_FILE"])
+    FileUtils.cp(ENV["AO_PUBLISH_FILES_KEY_FILE"], "./temp/publish_files.ppk");
+  end
+end
+
 Vagrant.configure("2") do |config|
   config.vm.box = "cheretbe/win10_en_64"
   config.winrm.username = "vagrant"
