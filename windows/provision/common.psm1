@@ -1,6 +1,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
+
 $Host.PrivateData.VerboseForegroundColor = [ConsoleColor]::DarkCyan
+$Host.PrivateData.VerboseBackgroundColor = $Host.UI.RawUI.BackgroundColor
+$Host.PrivateData.WarningBackgroundColor = $Host.UI.RawUI.BackgroundColor
+$Host.PrivateData.ErrorBackgroundColor = $Host.UI.RawUI.BackgroundColor
 
 $script:scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $global:provisionLocalTestMode = $FALSE

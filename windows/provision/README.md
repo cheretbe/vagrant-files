@@ -10,6 +10,18 @@ https://git.io/vby9m
 -scriptParams @{"Verbose" = $TRUE}
 ```
 
+### Git
+```powershell
+### Generic
+. ([scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m")))) `
+  -scriptName "git.ps1"
+### With Gitlab credentials
+. ([scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m")))) `
+  -scriptName "git.ps1" `
+  -scriptParams @{"saveGitlabCredentials" = $TRUE}
+```
+
+
 
 ```powershell
 . ([scriptblock]::Create(((New-Object System.Net.WebClient).DownloadString("https://git.io/vby9m")))) -scriptName "windows-config-builder.ps1"
