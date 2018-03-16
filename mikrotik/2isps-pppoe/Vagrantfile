@@ -1,0 +1,22 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define :client do |mt_client|
+    mt_client.vm.box = "cheretbe/routeros"
+    mt_client.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
+    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
+
+    config.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run ("scp -P #{@machine.ssh_info[:port]} -i #{@machine.ssh_info[:private_key_path][0]} " +
+          "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " +
+          "mt_client_provision.rsc #{@machine.ssh_info[:username]}@#{@machine.ssh_info[:host]}:/")
+        run "vagrant ssh -- \"/import mt_client_provision.rsc\""
+      end
+    end
+  end
+end
