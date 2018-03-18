@@ -14,13 +14,8 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision "trigger", :option => "value" do |trigger|
       trigger.fire do
-        #run ("scp -P #{@machine.ssh_info[:port]} -i #{@machine.ssh_info[:private_key_path][0]} " +
-        #  "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " +
-        #  "mt_client_provision.rsc #{@machine.ssh_info[:username]}@#{@machine.ssh_info[:host]}:/")
-        #run "vagrant ssh -- \"/import mt_client_provision.rsc\""
-        # upload_file(machine.ssh_info, "dummy")
-        upload_file("machine.ssh_info", "dummy")
-        # info machine.ssh_info[:host]
+        upload_file("mt_client_provision.rsc", "mt_client_provision.rsc", "mt_client_provision")
+        run "vagrant ssh -- /system script run mt_client_provision"
       end
     end
   end
