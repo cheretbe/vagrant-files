@@ -1,13 +1,14 @@
 [CmdletBinding()]
 param(
   [string]$filePath,
-  [string]$targetName
+  [string]$targetName,
+  [string]$machineName
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
-$vmIPAddress = & "vagrant" @("ssh", "--", ":put [/ip address get [find interface=`"host_only`"] address]")
+$vmIPAddress = & "vagrant" @("ssh", $machineName, "--", ":put [/ip address get [find interface=`"host_only`"] address]")
 # IP Address includes network (e.g. 172.28.128.6/24), we need to remove it
 $vmIPAddress = $vmIPAddress.Split("/")[0]
 
