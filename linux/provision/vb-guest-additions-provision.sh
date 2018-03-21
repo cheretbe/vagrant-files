@@ -45,7 +45,7 @@ else
 fi
 
 if [ ${installation_needed} -eq 1 ]; then
-  # Fix "dpkg-preconfigure: unable to re-open stdin: No such file or directory" error
+  # Fix for "dpkg-preconfigure: unable to re-open stdin: No such file or directory" error
   # https://serverfault.com/questions/500764/dpkg-reconfigure-unable-to-re-open-stdin-no-file-or-directory/670688#670688
   export DEBIAN_FRONTEND=noninteractive
 
