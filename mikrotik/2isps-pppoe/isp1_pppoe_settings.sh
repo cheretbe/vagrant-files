@@ -1,0 +1,7 @@
+pppoe_dns_1="8.8.8.8"
+pppoe_dns_2="8.8.4.4"
+pppoe_user_name="isp1_user"
+pppoe_password="password"
+pppoe_network="192.168.50.0/24"
+pppoe_ip="192.168.50.1"
+pppoe_dhcp_start="192.168.50.10"
