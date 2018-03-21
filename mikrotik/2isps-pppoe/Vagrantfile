@@ -1,0 +1,47 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require_relative "../provision/common.rb"
+
+Vagrant.configure("2") do |config|
+  config.vm.define :mt_client do |mt_client|
+    mt_client.vm.box = "cheretbe/routeros"
+    # mt_client.vm.box = "mt-test"
+    mt_client.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
+    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
+
+    mt_client.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        upload_file("mt_client_provision.rsc", "mt_client_provision.rsc", "mt_client_provision")
+        run "vagrant ssh #{@machine.name} -- /system script run mt_client_provision"
+      end
+    end
+  end
+
+  config.vm.define :isp1 do |isp1|
+    isp1.vm.box = "ubuntu/xenial64"
+    isp1.vm.hostname = "isp1"
+    isp1.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
+      # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+      # [!] Debug share
+      # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
+      #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
+    end
+    isp1.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    # isp1.vm.synced_folder "../../linux/provision", "/home/vagrant/provision"
+    # isp1.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-isp1-intnet"
+    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
+    isp1.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    isp1.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+
+    isp1.vm.provision "file", source: "isp1_pppoe_settings.sh", destination: "isp1_pppoe_settings.sh"
+    isp1.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
+      args: "/home/vagrant/isp1_pppoe_settings.sh"
+  end
+end
