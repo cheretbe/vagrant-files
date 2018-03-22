@@ -95,3 +95,14 @@ supervisorctl reread
 supervisorctl update
 # Restart pppoe-server in case /opt/pppoe-server.sh script has changed
 supervisorctl restart pppoe-server
+
+if ! grep -q "route add -net ${other_isp_net}" /etc/rc.local; then
+  echo "Updating '/etc/rc.local'"
+  sed -i "s!exit 0!/sbin/route add -net ${other_isp_net} gw ${other_isp_gw}!" /etc/rc.local
+  echo "exit 0" >> /etc/rc.local
+fi
+
+if ! grep -q "${other_isp_net}" <<< "$(ip route)"; then
+  echo "Adding static route to ${other_isp_net}"
+  /sbin/route add -net ${other_isp_net} gw ${other_isp_gw}
+fi
