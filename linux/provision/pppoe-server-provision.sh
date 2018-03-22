@@ -47,7 +47,7 @@ EOF
 if ! grep -q ${pppoe_user_name} /etc/ppp/chap-secrets; then
   echo "Updating '/etc/ppp/chap-secrets'"
   # client   server   secret   IP addresses
-  printf '\n"%s"\t*\t"%s"\t*\n' ${pppoe_user_name} ${pppoe_password} >> /etc/ppp/chap-secrets
+  printf '\n"%s"\t*\t"%s"\t%s\n' ${pppoe_user_name} ${pppoe_password} ${pppoe_client_static_ip} >> /etc/ppp/chap-secrets
 fi
 
 echo "Writing '/opt/pppoe-server.sh'"
