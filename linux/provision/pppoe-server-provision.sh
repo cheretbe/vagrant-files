@@ -21,7 +21,7 @@ do
 done
 
 echo "NAT interface name: ${host_nat_interface}"
-echo "Intnet interface name: ${pppoe_interface}"
+echo "Client intnet interface name: ${pppoe_interface}"
 
 apt-get -q update
 apt-get -q -y install pppoe supervisor
