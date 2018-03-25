@@ -4,6 +4,25 @@
 require_relative "../provision/common.rb"
 
 Vagrant.configure("2") do |config|
+  config.vm.define :client, autostart: false do |client|
+    client.vm.box = "ubuntu/xenial64"
+    client.vm.hostname = "client"
+    client.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
+      # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+      # [!] Debug share
+      # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
+      #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
+    end
+    client.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    client.vm.network "private_network", ip: "172.25.0.2", virtualbox__intnet: "vagrant-lan"
+
+    client.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    client.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+  end
+
   config.vm.define :mt_router do |mt_router|
     mt_router.vm.box = "cheretbe/routeros"
     # mt_router.vm.box = "mt-test"

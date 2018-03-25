@@ -17,6 +17,11 @@
   /interface ethernet set [find mac-address="$isp2MACaddr"] name="wan2_phys"
 }
 
+:if ([:len [/ip address find interface="lan"]] = 0) do={
+  :put "Adding IP 172.25.0.1 on interface 'lan'"
+  /ip address add address="172.25.0.1/24" interface="lan" network="172.25.0.0"
+}
+
 :if ([:len [/interface pppoe-client find name="wan1"]] = 0) do={
   :put "Adding PPPoE interface 'wan1'"
   /interface pppoe-client
