@@ -10,7 +10,7 @@ def upload_file(file_path, target_name, script_name)
     # "-o", "LogLevel=FATAL" ?
     run ("scp -P #{@machine.ssh_info[:port]} -i #{@machine.ssh_info[:private_key_path][0]} " +
       "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " +
-      "mt_client_provision.rsc #{@machine.ssh_info[:username]}@#{@machine.ssh_info[:host]}:/")
+      "#{file_path} #{@machine.ssh_info[:username]}@#{@machine.ssh_info[:host]}:/")
   end
 
   run ("vagrant ssh #{@machine.name} -- /system script add name=" + script_name + "
