@@ -4,25 +4,25 @@
 require_relative "../provision/common.rb"
 
 Vagrant.configure("2") do |config|
-  config.vm.define :mt_client do |mt_client|
-    mt_client.vm.box = "cheretbe/routeros"
-    # mt_client.vm.box = "mt-test"
-    mt_client.vm.provider "virtualbox" do |vb|
+  config.vm.define :mt_router do |mt_router|
+    mt_router.vm.box = "cheretbe/routeros"
+    # mt_router.vm.box = "mt-test"
+    mt_router.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
-    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
-    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
+    mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
+    mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
+    mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
 
-    mt_client.vm.provision "trigger", :option => "value" do |trigger|
+    mt_router.vm.provision "trigger", :option => "value" do |trigger|
       trigger.fire do
         # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
         # by the original Vagrantfile
         run "vagrant ssh #{@machine.name} -- ':global isp1MACaddr \"" + $vm_NIC_mac_addresses[2] + "\"; " +
           ":global isp2MACaddr \"" + $vm_NIC_mac_addresses[3] + "\"; " +
           ":global lanMACaddr \"" + $vm_NIC_mac_addresses[4] + "\"'"
-        upload_file("mt_client_provision.rsc", "mt_client_provision.rsc", "mt_client_provision")
-        run "vagrant ssh #{@machine.name} -- /system script run mt_client_provision"
+        upload_file("mt_router_provision.rsc", "mt_router_provision.rsc", "mt_router_provision")
+        run "vagrant ssh #{@machine.name} -- /system script run mt_router_provision"
       end
     end
   end

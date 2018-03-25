@@ -29,5 +29,5 @@
   add add-default-route=yes disabled=yes default-route-distance=10 interface=wan2_phys name=wan2 password=password user=isp2_user
 }
 
-:put "Setting identity to 'mt_client'"
-/system identity set name="mt_client"
+:put "Setting identity to 'mt_router'"
+/system identity set name="mt_router"
