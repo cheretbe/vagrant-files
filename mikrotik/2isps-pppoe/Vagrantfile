@@ -17,10 +17,11 @@ Vagrant.configure("2") do |config|
       #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
     end
     client.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
-    client.vm.network "private_network", ip: "172.25.0.2", virtualbox__intnet: "vagrant-lan"
+    client.vm.network "private_network", type: "dhcp", virtualbox__intnet: "vagrant-lan"
 
     client.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
     client.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    client.vm.provision "shell", path: "client_provision.sh"
   end
 
   config.vm.define :mt_router do |mt_router|
