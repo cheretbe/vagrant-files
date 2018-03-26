@@ -98,4 +98,24 @@ Vagrant.configure("2") do |config|
     isp2.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
       args: "/home/vagrant/isp2_pppoe_settings.sh"
   end
+
+  config.vm.define :remote_server, autostart: false do |remote_server|
+    remote_server.vm.box = "ubuntu/xenial64"
+    remote_server.vm.hostname = "remote-server"
+    remote_server.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
+      # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+      # [!] Debug share
+      # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
+      #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
+    end
+    remote_server.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    remote_server.vm.network "private_network", ip: "172.24.0.3", virtualbox__intnet: "vagrant-inter_isp-intnet"
+
+    remote_server.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    remote_server.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    remote_server.vm.provision "shell", path: "remote_server_provision.sh"
+  end
 end
