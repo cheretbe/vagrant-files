@@ -2,6 +2,7 @@
 # vi: set ft=ruby :
 
 require_relative "../provision/common.rb"
+require_relative "../../host-scripts/common.rb"
 
 Vagrant.configure("2") do |config|
   config.vm.define :client, autostart: false do |client|
@@ -112,10 +113,19 @@ Vagrant.configure("2") do |config|
       #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
     end
     remote_server.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
-    remote_server.vm.network "private_network", ip: "172.24.0.3", virtualbox__intnet: "vagrant-inter_isp-intnet"
+    remote_server.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet",
+      auto_config: false
 
     remote_server.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
     remote_server.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
-    remote_server.vm.provision "shell", path: "remote_server_provision.sh"
+    remote_server.vm.provision "file", source: "remote_server_provision.sh",
+      destination: "remote_server_provision.sh"
+
+    remote_server.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run_remote  "/bin/bash /home/vagrant/remote_server_provision.sh " +
+          "#{get_vb_nic_mac_address(2)}"
+      end
+    end
   end
 end
