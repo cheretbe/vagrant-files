@@ -56,22 +56,23 @@ Vagrant.configure("2") do |config|
       # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
       # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
       vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
-      # [!] Debug share
-      # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
-      #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
     end
     isp1.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
-    # isp1.vm.synced_folder "../../linux/provision", "/home/vagrant/provision"
-    # isp1.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-isp1-intnet"
     isp1.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
-    isp1.vm.network "private_network", ip: "172.24.0.1", virtualbox__intnet: "vagrant-inter_isp-intnet"
+    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
 
     isp1.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
     isp1.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
-
     isp1.vm.provision "file", source: "isp1_pppoe_settings.sh", destination: "isp1_pppoe_settings.sh"
-    isp1.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
-      args: "/home/vagrant/isp1_pppoe_settings.sh"
+    isp1.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
+      destination: "pppoe-server-provision.sh"
+    isp1.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run_remote  "/bin/bash /home/vagrant/pppoe-server-provision.sh " +
+          "/home/vagrant/isp1_pppoe_settings.sh #{get_vb_nic_mac_address(1)} " +
+          "#{get_vb_nic_mac_address(2)} #{get_vb_nic_mac_address(3)}"
+      end
+    end
   end
 
   config.vm.define :isp2 do |isp2|
@@ -82,22 +83,25 @@ Vagrant.configure("2") do |config|
       # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
       # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
       vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
-      # [!] Debug share
-      # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
-      #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
     end
     isp2.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
-    # isp2.vm.synced_folder "../../linux/provision", "/home/vagrant/provision"
-    # isp2.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-isp2-intnet"
     isp2.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
-    isp2.vm.network "private_network", ip: "172.24.0.2", virtualbox__intnet: "vagrant-inter_isp-intnet"
+    isp2.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
 
     isp2.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
     isp2.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
-
     isp2.vm.provision "file", source: "isp2_pppoe_settings.sh", destination: "isp2_pppoe_settings.sh"
-    isp2.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
-      args: "/home/vagrant/isp2_pppoe_settings.sh"
+    # isp2.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
+    #   args: "/home/vagrant/isp2_pppoe_settings.sh"
+    isp2.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
+      destination: "pppoe-server-provision.sh"
+    isp2.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run_remote  "/bin/bash /home/vagrant/pppoe-server-provision.sh " +
+          "/home/vagrant/isp2_pppoe_settings.sh #{get_vb_nic_mac_address(1)} " +
+          "#{get_vb_nic_mac_address(2)} #{get_vb_nic_mac_address(3)}"
+      end
+    end
   end
 
   config.vm.define :remote_server, autostart: false do |remote_server|
