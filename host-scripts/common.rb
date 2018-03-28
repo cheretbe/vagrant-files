@@ -5,7 +5,11 @@ def quoted_string_to_mac_address(str)
 end
 
 def get_vb_nic_mac_address(nic_idx)
-  if ($vb_vm_info.nil?)
+  read_info = true
+  if (not $vb_vm_info.nil?) then
+    read_info = $vb_vm_info["UUID"] != "\"#{@machine.id}\""
+  end
+  if (read_info) then
     # Save VM info in a global variable to avoid subsequent vboxmanage calls
     # if more than one MAC address is needed
     vb_provider = VagrantPlugins::ProviderVirtualBox::Driver::Meta.new
