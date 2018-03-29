@@ -2,21 +2,48 @@
 # vi: set ft=ruby :
 
 require_relative "../provision/common.rb"
+require_relative "../../host-scripts/common.rb"
 
 Vagrant.configure("2") do |config|
-  config.vm.define :mt_client do |mt_client|
-    mt_client.vm.box = "cheretbe/routeros"
-    # mt_client.vm.box = "mt-test"
-    mt_client.vm.provider "virtualbox" do |vb|
+  config.vm.define :client, autostart: false do |client|
+    client.vm.box = "ubuntu/xenial64"
+    client.vm.hostname = "client"
+    client.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
+      # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+      # [!] Debug share
+      # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
+      #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
+    end
+    client.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    client.vm.network "private_network", type: "dhcp", virtualbox__intnet: "vagrant-lan"
+
+    client.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    client.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    client.vm.provision "shell", path: "client_provision.sh"
+  end
+
+  config.vm.define :mt_router do |mt_router|
+    mt_router.vm.box = "cheretbe/routeros"
+    # mt_router.vm.box = "mt-test"
+    mt_router.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
-    mt_client.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
+    mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
+    mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
+    mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
 
-    mt_client.vm.provision "trigger", :option => "value" do |trigger|
+    mt_router.vm.provision "trigger", :option => "value" do |trigger|
       trigger.fire do
-        upload_file("mt_client_provision.rsc", "mt_client_provision.rsc", "mt_client_provision")
-        run "vagrant ssh #{@machine.name} -- /system script run mt_client_provision"
+        # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
+        # by the original Vagrantfile
+        run "vagrant ssh #{@machine.name} -- ':global isp1MACaddr \"" + $vm_NIC_mac_addresses[2] + "\"; " +
+          ":global isp2MACaddr \"" + $vm_NIC_mac_addresses[3] + "\"; " +
+          ":global lanMACaddr \"" + $vm_NIC_mac_addresses[4] + "\"'"
+        upload_file("mt_router_provision.rsc", "mt_router_provision.rsc", "mt_router_provision")
+        run "vagrant ssh #{@machine.name} -- /system script run mt_router_provision"
       end
     end
   end
@@ -29,19 +56,80 @@ Vagrant.configure("2") do |config|
       # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
       # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
       vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+    end
+    isp1.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
+    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
+
+    isp1.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    isp1.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    isp1.vm.provision "file", source: "isp1_pppoe_settings.sh", destination: "isp1_pppoe_settings.sh"
+    isp1.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
+      destination: "pppoe-server-provision.sh"
+    isp1.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run_remote  "/bin/bash /home/vagrant/pppoe-server-provision.sh " +
+          "/home/vagrant/isp1_pppoe_settings.sh #{get_vb_nic_mac_address(1)} " +
+          "#{get_vb_nic_mac_address(2)} #{get_vb_nic_mac_address(3)}"
+      end
+    end
+  end
+
+  config.vm.define :isp2 do |isp2|
+    isp2.vm.box = "ubuntu/xenial64"
+    isp2.vm.hostname = "isp2"
+    isp2.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
+      # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+    end
+    isp2.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    isp2.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
+    isp2.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
+
+    isp2.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    isp2.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    isp2.vm.provision "file", source: "isp2_pppoe_settings.sh", destination: "isp2_pppoe_settings.sh"
+    # isp2.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
+    #   args: "/home/vagrant/isp2_pppoe_settings.sh"
+    isp2.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
+      destination: "pppoe-server-provision.sh"
+    isp2.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run_remote  "/bin/bash /home/vagrant/pppoe-server-provision.sh " +
+          "/home/vagrant/isp2_pppoe_settings.sh #{get_vb_nic_mac_address(1)} " +
+          "#{get_vb_nic_mac_address(2)} #{get_vb_nic_mac_address(3)}"
+      end
+    end
+  end
+
+  config.vm.define :remote_server, autostart: false do |remote_server|
+    remote_server.vm.box = "ubuntu/xenial64"
+    remote_server.vm.hostname = "remote-server"
+    remote_server.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
+      # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
       # [!] Debug share
       # vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
       #   File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
     end
-    isp1.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
-    # isp1.vm.synced_folder "../../linux/provision", "/home/vagrant/provision"
-    # isp1.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-isp1-intnet"
-    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
-    isp1.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
-    isp1.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    remote_server.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+    remote_server.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet",
+      auto_config: false
 
-    isp1.vm.provision "file", source: "isp1_pppoe_settings.sh", destination: "isp1_pppoe_settings.sh"
-    isp1.vm.provision "shell", path: "../../linux/provision/pppoe-server-provision.sh",
-      args: "/home/vagrant/isp1_pppoe_settings.sh"
+    remote_server.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
+    remote_server.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
+    remote_server.vm.provision "file", source: "remote_server_provision.sh",
+      destination: "remote_server_provision.sh"
+
+    remote_server.vm.provision "trigger", :option => "value" do |trigger|
+      trigger.fire do
+        run_remote  "/bin/bash /home/vagrant/remote_server_provision.sh " +
+          "#{get_vb_nic_mac_address(2)}"
+      end
+    end
   end
 end
