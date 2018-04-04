@@ -25,7 +25,7 @@
 :if ([:len [/interface pppoe-client find name="wan1"]] = 0) do={
   :put "Adding PPPoE interface 'wan1'"
   /interface pppoe-client
-  add add-default-route=yes disabled=no default-route-distance=10 interface=wan1_phys name=wan1 password=password user=isp1_user
+  add add-default-route=yes disabled=no default-route-distance=5 interface=wan1_phys name=wan1 password=password user=isp1_user
 }
 
 :if ([:len [/interface pppoe-client find name="wan2"]] = 0) do={
