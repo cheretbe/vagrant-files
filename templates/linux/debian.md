@@ -1,2 +1,0 @@
-
-debian/stretch64
