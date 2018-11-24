@@ -4,6 +4,7 @@ set -euo pipefail
 
 for iface in $(ifconfig -a | cut -d ' ' -f1| tr ':' '\n' | awk NF)
 do
+  ifconfig ${iface}
   if_ip_addr=$(ifconfig ${iface} | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
   echo "${iface}: ${if_ip_addr}"
   if [ "${if_ip_addr:0:4}" == "10.0" ]; then
