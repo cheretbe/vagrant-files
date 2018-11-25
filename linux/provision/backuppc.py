@@ -8,6 +8,17 @@ import requests
 import shutil
 import distutils.version
 import pwd
+import argparse
+
+parser = argparse.ArgumentParser(description="BackupPC installation script")
+parser.add_argument("-l", "--data-dir-to-link", dest="data_dir_to_link", default=None,
+    help="Path to the BackupPC data directory to be symlinked as /var/lib/backuppc")
+parser.add_argument("-n", "--hostname", dest="hostname", default="backuppc",
+    help="Host name (default: backuppc)")
+parser.add_argument("-а", "--force-version", dest="force_version", default=None,
+    help="Set specific version to install", metavar="VERSION")
+
+options = parser.parse_args()
 
 needed_packages = ["apache2", "apache2-utils", "libapache2-mod-perl2",
     "smbclient", "postfix", "libapache2-mod-scgi", "libarchive-zip-perl",
@@ -61,8 +72,17 @@ if installed_version:
         print("BackupPC does not need an upgrade. Exiting")
         sys.exit(0)
 
-if not upgrade_mode:
+if upgrade_mode:
+    run("service backuppc stop")
+else:
     print("Installing BackupPC")
+
+    # For a symlink with non-existing target exists is False, but islink is True
+    if os.path.exists("/var/lib/backuppc") or os.path.islink("/var/lib/backuppc"):
+        raise Exception("'/var/lib/backuppc' already exists. Exiting")
+    if options.data_dir_to_link:
+        run("ln -s {} /var/lib/backuppc".format(options.data_dir_to_link))
+
     user_exists = False
     try:
         pwd.getpwnam("backuppc")
@@ -73,8 +93,22 @@ if not upgrade_mode:
         raise Exception("User `backuppc' already exists. Exiting")
     run("adduser --system --home /var/lib/backuppc --group --disabled-password --shell /bin/false backuppc")
 
-print("there you go")
-sys.exit(0)
+    if options.data_dir_to_link:
+        run("chown backuppc:backuppc {}".format(options.data_dir_to_link))
+
+    run("mkdir -p /var/lib/backuppc/.ssh")
+    run("chmod 700 /var/lib/backuppc/.ssh")
+    # [!] 'StrictHostKeyChecking no' parameter is optional, it allows connecting to any host
+    # without explicitly adding it to .ssh/known_hosts
+    with open("/var/lib/backuppc/.ssh/config", "w") as f:
+        f.write("BatchMode yes\nStrictHostKeyChecking no\n")
+    run('ssh-keygen -q -t rsa -b 4096 -N "" -C "BackupPC key" -f /var/lib/backuppc/.ssh/id_rsa')
+    run("chmod 600 /var/lib/backuppc/.ssh/id_rsa")
+    run("chmod 644 /var/lib/backuppc/.ssh/id_rsa.pub")
+    run("chown -R backuppc:backuppc /var/lib/backuppc/.ssh")
+
+# print("there you go")
+# sys.exit(0)
 
 src_dir = os.path.expanduser("~/source")
 os.makedirs(src_dir, exist_ok=True)
@@ -100,11 +134,19 @@ run("make")
 run("make install")
 os.chdir("..")
 
-release_info = requests.get("https://api.github.com/repos/backuppc/backuppc/releases/latest").json()
+if options.force_version:
+    release_info = requests.get("https://api.github.com/repos/backuppc/backuppc/releases/tags/{}".format(options.force_version)).json()
+else:
+    release_info = requests.get("https://api.github.com/repos/backuppc/backuppc/releases/latest").json()
 local_filename = download_file(release_info["assets"][0]["browser_download_url"])
 run("tar -xzvf " + local_filename)
 os.chdir("BackupPC-" + release_info["tag_name"])
-run("ls -lh")
+if upgrade_mode:
+    run("./configure.pl --batch --config-path /etc/BackupPC/config.pl")
+else:
+    run("./configure.pl --batch --cgi-dir /var/www/cgi-bin/BackupPC "
+        "--data-dir /var/lib/backuppc --hostname {} --html-dir /var/www/html/BackupPC "
+        "--html-dir-url /BackupPC --install-dir /usr/local/BackupPC".format(options.hostname))
 
 if show_postfix_warning:
     print("\033[93m\n[!] Don't forget to configure MTA with 'dpkg-reconfigure postfix --priority low' \033[0m")
