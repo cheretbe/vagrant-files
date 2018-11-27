@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
-import os
-import sys
 import apt
-import subprocess
+import argparse
+import distutils.version
+import os
+import pwd
 import requests
 import shutil
-import distutils.version
-import pwd
-import argparse
+import socket
+import subprocess
+import sys
 
 parser = argparse.ArgumentParser(description="BackupPC installation script")
 parser.add_argument("-l", "--data-dir-to-link", dest="data_dir_to_link", default=None,
     help="Path to the BackupPC data directory to be symlinked as /var/lib/backuppc")
-parser.add_argument("-n", "--hostname", dest="hostname", default="backuppc",
-    help="Host name (default: backuppc)")
 parser.add_argument("-а", "--force-version", dest="force_version", default=None,
     help="Set specific version to install", metavar="VERSION")
 parser.add_argument('-b', '--batch', dest='batch_mode', action='store_true',
@@ -25,7 +24,7 @@ options = parser.parse_args()
 needed_packages = ["apache2", "apache2-utils", "libapache2-mod-perl2",
     "smbclient", "postfix", "libapache2-mod-scgi", "libarchive-zip-perl",
     "libfile-listing-perl", "libxml-rss-perl", "libcgi-session-perl", "make",
-    "gcc"]
+    "gcc", "par2", "rrdtool"]
 
 def run(command):
     print(command)
@@ -46,7 +45,23 @@ apt_cache = apt.Cache()
 for needed_package in needed_packages:
     if not apt_cache[needed_package].is_installed:
         packages_to_install += [needed_package]
-show_postfix_warning = not apt_cache["postfix"].is_installed
+install_postfix = not apt_cache["postfix"].is_installed
+
+if not apt_cache["debconf-utils"].is_installed:
+    run("apt install debconf-utils")
+
+if options.batch_mode:
+    if install_postfix:
+        run('echo postfix postfix/mailname string "{}" | debconf-set-selections'.format(socket.getfqdn()))
+        run('echo postfix postfix/root_address string "vagrant" | debconf-set-selections')
+        run('echo postfix postfix/main_mailer_type select "Local only" | debconf-set-selections')
+else:
+    #TODO: only when postfix is going to be installed?
+    for line in subprocess.check_output("debconf-get-selections").decode("utf-8").splitlines():
+        values = line.split("\t")
+        if values[0] == "debconf" and values[1] == "debconf/priority" and values[3] != "low":
+            run('echo debconf debconf/priority select "low" | debconf-set-selections')
+            break
 
 if len(packages_to_install) != 0:
     print("Installing packages: " + ", ".join(packages_to_install))
@@ -153,7 +168,7 @@ if upgrade_mode:
 else:
     run("./configure.pl --batch --cgi-dir /var/www/cgi-bin/BackupPC "
         "--data-dir /var/lib/backuppc --hostname {} --html-dir /var/www/html/BackupPC "
-        "--html-dir-url /BackupPC --install-dir /usr/local/BackupPC".format(options.hostname))
+        "--html-dir-url /BackupPC --install-dir /usr/local/BackupPC".format(socket.getfqdn()))
     run("cp httpd/BackupPC.conf /etc/apache2/conf-available/backuppc.conf")
 
     # Allows to connect to web UI from anywhere, not only from 127.0.0.1 by removing the following lines:
@@ -211,9 +226,18 @@ else:
 
     run("chown -R backuppc:backuppc /etc/BackupPC")
 
-    run("htpasswd /etc/BackupPC/BackupPC.users backuppc")
+    if options.batch_mode:
+        run("htpasswd -b -c /etc/BackupPC/BackupPC.users backuppc backuppc")
+    else:
+        print("\033[96m\nEnter password for 'backuppc' user:\033[0m")
+        run("htpasswd /etc/BackupPC/BackupPC.users backuppc")
 
 run("service backuppc start")
 
-if show_postfix_warning:
-    print("\033[93m\n[!] Don't forget to configure MTA with 'dpkg-reconfigure postfix --priority low' \033[0m")
+if options.batch_mode and (not upgrade_mode):
+    print("\033[93m\n[!] HTTP user 'backuppc' with password 'backuppc' has been created.")
+    print("    Use 'htpasswd /etc/BackupPC/BackupPC.users backuppc' to change password.\033[0m")
+if options.batch_mode and install_postfix:
+    print("\033[93m\n[!] Postfix MTA has been configured with local delivery and")
+    print("    'vagrant' user as postmaster and root mail recipient in '/etc/aliases'.")
+    print("    Use 'dpkg-reconfigure postfix --priority low' to configure MTA.\033[0m")
