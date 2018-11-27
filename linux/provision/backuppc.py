@@ -53,7 +53,7 @@ if not apt_cache["debconf-utils"].is_installed:
 if options.batch_mode:
     if install_postfix:
         run('echo postfix postfix/mailname string "{}" | debconf-set-selections'.format(socket.getfqdn()))
-        run('echo postfix postfix/root_address string "vagrant" | debconf-set-selections')
+        run('echo postfix postfix/root_address string "backuppc" | debconf-set-selections')
         run('echo postfix postfix/main_mailer_type select "Local only" | debconf-set-selections')
 else:
     #TODO: only when postfix is going to be installed?
@@ -239,5 +239,5 @@ if options.batch_mode and (not upgrade_mode):
     print("    Use 'htpasswd /etc/BackupPC/BackupPC.users backuppc' to change password.\033[0m")
 if options.batch_mode and install_postfix:
     print("\033[93m\n[!] Postfix MTA has been configured with local delivery and")
-    print("    'vagrant' user as postmaster and root mail recipient in '/etc/aliases'.")
+    print("    'backuppc' user as postmaster and root mail recipient in '/etc/aliases'.")
     print("    Use 'dpkg-reconfigure postfix --priority low' to configure MTA.\033[0m")
