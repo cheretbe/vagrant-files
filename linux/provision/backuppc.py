@@ -14,7 +14,7 @@ import sys
 parser = argparse.ArgumentParser(description="BackupPC installation script")
 parser.add_argument("-l", "--data-dir-to-link", dest="data_dir_to_link", default=None,
     help="Path to the BackupPC data directory to be symlinked as /var/lib/backuppc")
-parser.add_argument("-а", "--force-version", dest="force_version", default=None,
+parser.add_argument("-f", "--force-version", dest="force_version", default=None,
     help="Set specific version to install", metavar="VERSION")
 parser.add_argument('-b', '--batch', dest='batch_mode', action='store_true',
     default=False, help='Run in batch mode without any prompts')
@@ -22,9 +22,9 @@ parser.add_argument('-b', '--batch', dest='batch_mode', action='store_true',
 options = parser.parse_args()
 
 needed_packages = ["apache2", "apache2-utils", "libapache2-mod-perl2",
-    "smbclient", "postfix", "libapache2-mod-scgi", "libarchive-zip-perl",
+    "smbclient", "rrdtool", "libapache2-mod-scgi", "libarchive-zip-perl",
     "libfile-listing-perl", "libxml-rss-perl", "libcgi-session-perl", "make",
-    "gcc", "par2", "rrdtool"]
+    "gcc", "par2"]
 
 def run(command):
     print(command)
@@ -45,31 +45,39 @@ apt_cache = apt.Cache()
 for needed_package in needed_packages:
     if not apt_cache[needed_package].is_installed:
         packages_to_install += [needed_package]
-install_postfix = not apt_cache["postfix"].is_installed
 
 if not apt_cache["debconf-utils"].is_installed:
     run("apt install debconf-utils")
 
-if options.batch_mode:
-    if install_postfix:
-        run('echo postfix postfix/mailname string "{}" | debconf-set-selections'.format(socket.getfqdn()))
-        run('echo postfix postfix/root_address string "backuppc" | debconf-set-selections')
-        run('echo postfix postfix/main_mailer_type select "Local only" | debconf-set-selections')
-else:
-    #TODO: only when postfix is going to be installed?
-    for line in subprocess.check_output("debconf-get-selections").decode("utf-8").splitlines():
-        values = line.split("\t")
-        if values[0] == "debconf" and values[1] == "debconf/priority" and values[3] != "low":
-            run('echo debconf debconf/priority select "low" | debconf-set-selections')
-            break
-
 if len(packages_to_install) != 0:
     print("Installing packages: " + ", ".join(packages_to_install))
     if options.batch_mode:
-        # DEBIAN_FRONTEND variable is set to avoid postfix package showing configuration dialog
-        run("DEBIAN_FRONTEND=noninteractive apt-get install -y -q " + " ".join(packages_to_install))
+        run("apt-get install -y -q " + " ".join(packages_to_install))
     else:
         run("apt-get install -y " + " ".join(packages_to_install))
+
+install_postfix = not apt_cache["postfix"].is_installed
+if install_postfix:
+    if options.batch_mode:
+        run('echo postfix postfix/mailname string "{}" | debconf-set-selections'.format(socket.getfqdn()))
+        run('echo postfix postfix/root_address string "backuppc" | debconf-set-selections')
+        run('echo postfix postfix/main_mailer_type select "Local only" | debconf-set-selections')
+        # DEBIAN_FRONTEND variable is set to avoid postfix package showing configuration dialog
+        run("DEBIAN_FRONTEND=noninteractive apt-get install -y -q postfix")
+    else:
+        for line in subprocess.check_output("debconf-get-selections").decode("utf-8").splitlines():
+            values = line.split("\t")
+            if values[0] == "debconf" and values[1] == "debconf/priority":
+                old_debconf_priority = values[3]
+                break
+        # Make sure questions priority is low so that root and postmater alias
+        # is configured properly
+        if old_debconf_priority != "low":
+            run('echo debconf debconf/priority select "low" | debconf-set-selections')
+        run("apt-get install -y postfix")
+        # Restore questions priority to the original value
+        if old_debconf_priority != "low":
+            run('echo debconf debconf/priority select "{}" | debconf-set-selections'.format(old_debconf_priority))
 
 installed_version = None
 upgrade_mode = False
@@ -229,7 +237,7 @@ else:
     if options.batch_mode:
         run("htpasswd -b -c /etc/BackupPC/BackupPC.users backuppc backuppc")
     else:
-        print("\033[96m\nEnter password for 'backuppc' user:\033[0m")
+        print("\033[96m\nEnter HTTP password for 'backuppc' user:\033[0m")
         run("htpasswd /etc/BackupPC/BackupPC.users backuppc")
 
 run("service backuppc start")
