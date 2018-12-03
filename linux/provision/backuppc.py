@@ -24,7 +24,7 @@ options = parser.parse_args()
 needed_packages = ["apache2", "apache2-utils", "libapache2-mod-perl2",
     "smbclient", "rrdtool", "libapache2-mod-scgi", "libarchive-zip-perl",
     "libfile-listing-perl", "libxml-rss-perl", "libcgi-session-perl", "make",
-    "gcc", "par2"]
+    "gcc", "par2", "libacl1", "libacl1-dev"]
 
 def run(command):
     print(command)
