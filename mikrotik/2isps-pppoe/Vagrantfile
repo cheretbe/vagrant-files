@@ -35,16 +35,21 @@ Vagrant.configure("2") do |config|
     mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
     mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
 
-    # Using "up" instead of "provision" until the issue #2 in packer-mikrotik is resolved
-    mt_router.trigger.after :up do |trigger|
+    # Using these + custom_provision_enabled instead of "provision" until the
+    # following issue is resolved:
+    # https://github.com/hashicorp/vagrant/issues/9846
+    mt_router.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
-        # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
-        # by the original Vagrantfile
-        system "vagrant ssh #{machine.name} -- ':global isp1MACaddr \"" + $vm_NIC_mac_addresses[2] + "\"; " +
-          ":global isp2MACaddr \"" + $vm_NIC_mac_addresses[3] + "\"; " +
-          ":global lanMACaddr \"" + $vm_NIC_mac_addresses[4] + "\"'"
-        upload_file(machine, "mt_router_provision.rsc", "mt_router_provision.rsc", "mt_router_provision")
-        system "vagrant ssh #{machine.name} -- /system script run mt_router_provision"
+        if machine.custom_provision_enabled then
+          # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
+          # by the original Vagrantfile
+          system "vagrant ssh #{machine.name} -- '" +
+            ":global isp1MACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
+            ":global isp2MACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\"; " +
+            ":global lanMACaddr \"" + machine.vm_NIC_mac_addresses[4] + "\"'"
+          upload_mikrotik_script(machine, "mt_router_provision.rsc", "mt_router_provision")
+          system "vagrant ssh #{machine.name} -- /system script run mt_router_provision"
+        end
       end
     end
   end
