@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+echo "Parameters: " $*
+
 if [ -z ${1+x} ]; then
   echo "Mandatory parameter is missing - 1: Config file path"
   exit 1
