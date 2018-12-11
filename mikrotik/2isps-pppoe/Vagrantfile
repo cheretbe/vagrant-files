@@ -72,7 +72,7 @@ Vagrant.configure("2") do |config|
     isp1.vm.provision "file", source: "isp1_pppoe_settings.sh", destination: "isp1_pppoe_settings.sh"
     isp1.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
       destination: "pppoe-server-provision.sh"
-    isp1.trigger.after :up do |trigger|
+    isp1.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
         # run_remote  "/bin/bash /home/vagrant/pppoe-server-provision.sh " +
         #   "/home/vagrant/isp1_pppoe_settings.sh #{get_vb_nic_mac_address(1)} " +
@@ -103,9 +103,14 @@ Vagrant.configure("2") do |config|
       destination: "pppoe-server-provision.sh"
     isp2.trigger.after :up do |trigger|
       trigger.ruby do |env,machine|
-        # run_remote  "/bin/bash /home/vagrant/pppoe-server-provision.sh " +
-        #   "/home/vagrant/isp2_pppoe_settings.sh #{get_vb_nic_mac_address(1)} " +
-        #   "#{get_vb_nic_mac_address(2)} #{get_vb_nic_mac_address(3)}"
+        if machine.custom_provision_enabled then
+          nic_macs = get_vb_nic_mac_address_list(machine)
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            "/usr/bin/sudo /bin/bash /home/vagrant/pppoe-server-provision.sh " +
+            "/home/vagrant/isp2_pppoe_settings.sh #{nic_macs[0]} " +
+            "#{nic_macs[0]} #{nic_macs[0]}"
+          )
+        end
       end
     end
   end
