@@ -139,8 +139,13 @@ Vagrant.configure("2") do |config|
     remote_server.vm.provision "file", source: "remote_server_provision.sh",
       destination: "remote_server_provision.sh"
 
-    remote_server.trigger.after :up do |trigger|
+    remote_server.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
+        nic_macs = get_vb_nic_mac_address_list(machine)
+        system("vagrant", "ssh", "#{machine.name}", "--",
+          "/usr/bin/sudo /bin/bash /home/vagrant/remote_server_provision.sh " +
+          "#{nic_macs[1]}"
+        )
         # run_remote  "/bin/bash /home/vagrant/remote_server_provision.sh " +
         #   "#{get_vb_nic_mac_address(2)}"
       end
