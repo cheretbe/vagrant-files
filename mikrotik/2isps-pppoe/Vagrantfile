@@ -20,9 +20,24 @@ Vagrant.configure("2") do |config|
     client.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
     client.vm.network "private_network", type: "dhcp", virtualbox__intnet: "vagrant-lan"
 
-    client.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh"
-    client.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh"
-    client.vm.provision "shell", path: "client_provision.sh"
+    client.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh", keep_color: true
+    client.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh", keep_color: true
+    client.vm.provision "file", source: "client_provision.sh", destination: "client_provision.sh"
+
+    # Using these + custom_provision_enabled instead of "provision" until the
+    # following issue is resolved:
+    # https://github.com/hashicorp/vagrant/issues/9846
+    client.trigger.after :up, :provision, :reload, :resume do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled then
+          nic_macs = get_vb_nic_mac_address_list(machine)
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            "/usr/bin/sudo /bin/bash /home/vagrant/client_provision.sh " +
+            "#{nic_macs[0]} #{nic_macs[1]}"
+          )
+        end
+      end
+    end
   end
 
   config.vm.define :mt_router do |mt_router|
@@ -35,9 +50,6 @@ Vagrant.configure("2") do |config|
     mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
     mt_router.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
 
-    # Using these + custom_provision_enabled instead of "provision" until the
-    # following issue is resolved:
-    # https://github.com/hashicorp/vagrant/issues/9846
     mt_router.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled then
@@ -146,8 +158,6 @@ Vagrant.configure("2") do |config|
           "/usr/bin/sudo /bin/bash /home/vagrant/remote_server_provision.sh " +
           "#{nic_macs[1]}"
         )
-        # run_remote  "/bin/bash /home/vagrant/remote_server_provision.sh " +
-        #   "#{get_vb_nic_mac_address(2)}"
       end
     end
   end
