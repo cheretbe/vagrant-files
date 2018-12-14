@@ -74,6 +74,9 @@ Vagrant.configure("2") do |config|
       # Prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
       # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
       vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+      # [!] Debug share
+      vb.customize ["sharedfolder", "add", :id, "--name", "debug", "--hostpath",
+        File.expand_path("../..", File.dirname(__FILE__)), "--automount"]
     end
     isp1.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
     isp1.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
@@ -88,11 +91,11 @@ Vagrant.configure("2") do |config|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled then
           nic_macs = get_vb_nic_mac_address_list(machine)
-          system("vagrant", "ssh", "#{machine.name}", "--",
-            "/usr/bin/sudo /bin/bash /home/vagrant/pppoe-server-provision.sh " +
-            "/home/vagrant/isp1_pppoe_settings.sh #{nic_macs[0]} " +
-            "#{nic_macs[1]} #{nic_macs[2]}"
-          )
+          # system("vagrant", "ssh", "#{machine.name}", "--",
+          #   "/usr/bin/sudo /bin/bash /home/vagrant/pppoe-server-provision.sh " +
+          #   "/home/vagrant/isp1_pppoe_settings.sh #{nic_macs[0]} " +
+          #   "#{nic_macs[1]} #{nic_macs[2]}"
+          # )
         end
       end
     end
