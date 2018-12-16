@@ -116,14 +116,14 @@ supervisorctl update
 # Restart pppoe-server in case /opt/pppoe-server.sh script has changed
 supervisorctl restart pppoe-server
 
-echo "Writing '/etc/network/interfaces.d/${inter_isp_interface}.cfg'"
-cat << EOF > /etc/network/interfaces.d/${inter_isp_interface}.cfg
-auto ${inter_isp_interface}
-  iface ${inter_isp_interface} inet static
-  address ${inter_isp_ip}
-  netmask 255.255.255.0
-  up /sbin/route add -net ${other_isp_net} gw ${other_isp_gw} || true
-EOF
-# Restart networking in case the config has changed
-echo "Restarting network"
-service networking restart
+# echo "Writing '/etc/network/interfaces.d/${inter_isp_interface}.cfg'"
+# cat << EOF > /etc/network/interfaces.d/${inter_isp_interface}.cfg
+# auto ${inter_isp_interface}
+#   iface ${inter_isp_interface} inet static
+#   address ${inter_isp_ip}
+#   netmask 255.255.255.0
+# #  up /sbin/route add -net ${other_isp_net} gw ${other_isp_gw} || true
+# EOF
+# # Restart networking in case the config has changed
+# echo "Restarting network"
+# service networking restart

@@ -80,7 +80,7 @@ Vagrant.configure("2") do |config|
     end
     isp1.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
     isp1.vm.network "private_network", virtualbox__intnet: "vagrant-isp1-intnet", auto_config: false
-    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
+    isp1.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", ip: "172.24.0.1"
 
     isp1.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh", keep_color: true
     isp1.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh", keep_color: true
@@ -118,13 +118,14 @@ Vagrant.configure("2") do |config|
     end
     isp2.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
     isp2.vm.network "private_network", virtualbox__intnet: "vagrant-isp2-intnet", auto_config: false
-    isp2.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
+    isp2.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", ip: "172.24.0.2"
 
     isp2.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh", keep_color: true
     isp2.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh", keep_color: true
     isp2.vm.provision "file", source: "isp2_pppoe_settings.sh", destination: "isp2_pppoe_settings.sh"
     isp2.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
       destination: "pppoe-server-provision.sh"
+    isp2.vm.provision "file", source: "quagga_provision.py", destination: "quagga_provision.py"
     isp2.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled then
@@ -133,6 +134,11 @@ Vagrant.configure("2") do |config|
             "/usr/bin/sudo /bin/bash /home/vagrant/pppoe-server-provision.sh " +
             "/home/vagrant/isp2_pppoe_settings.sh #{nic_macs[0]} " +
             "#{nic_macs[1]} #{nic_macs[2]}"
+          )
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_provision.py " +
+            "#{nic_macs[2]} --router-id 172.24.0.2 " +
+            "--networks 192.168.52.0/24 172.24.0.0/24"
           )
         end
       end
