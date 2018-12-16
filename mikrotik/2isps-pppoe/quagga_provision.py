@@ -25,36 +25,20 @@ def interface_name_by_mac(mac_address):
         raise Exception("Cannot find network interface with MAC-address " + mac_address)
     return if_name
 
-def ip_address_by_interface_name(if_name):
-    ip_address = None
-    for line in subprocess.check_output("ip addr show " + if_name, shell=True).decode("utf-8").splitlines():
-        values = line.split()
-        if values[0] == "inet":
-            ip_address = values[1]
-    if not ip_address:
-        raise Exception("Cannot find IP addres for interface " + if_name)
-    return ip_address
-
-
-
-# http://www.brianlinkletter.com/how-to-build-a-network-of-linux-routers-using-quagga/
-# https://www.linux.com/learn/intro-to-linux/2018/3/dynamic-linux-routing-quagga
-# http://calcn1.com/blog/linux/52.html
-# http://www.tux.in.ua/articles/2182
-# https://www.nongnu.org/quagga/docs/docs-multi/OSPF-Configuration-Examples.html
-
 parser = argparse.ArgumentParser(description="Quagga OSPF configuration script")
 parser.add_argument("interfaces", nargs="+", metavar="interface",
     help="Interface name or MAC-address")
+parser.add_argument("--router-id", required=True, help="router-ID of the OSPF process")
+parser.add_argument("--networks", required=True, nargs="+", help="network(s) to provide to other OSPF routers")
 options = parser.parse_args()
 
 for i in range(len(options.interfaces)):
     if (":" in options.interfaces[i]) and (len(options.interfaces[i].split(":")) == 6):
-      options.interfaces[i] = interface_name_by_mac(options.interfaces[i])
+        options.interfaces[i] = interface_name_by_mac(options.interfaces[i])
 
 needed_packages = ["quagga", "quagga-doc"]
 
-run("apt-get -q update")
+run("apt -q update")
 packages_to_install = []
 apt_cache = apt.Cache()
 for needed_package in needed_packages:
@@ -89,26 +73,26 @@ log file /var/log/quagga/ospfd.log
 for interface in options.interfaces:
     ospfd_conf_contents += "\ninterface " + interface + "\n  ip ospf hello-interval 1\n"
 
-ospfd_conf_contents += "\nrouter ospf\n  ospf router-id 192.168.199.10\n"
+ospfd_conf_contents += ("\nrouter ospf\n  ospf router-id {}\n").format(options.router_id)
 
-for interface in options.interfaces:
-    ospfd_conf_contents +=  "  network " + ip_address_by_interface_name(interface) + " area 1\n"
+for network in options.networks:
+    ospfd_conf_contents +=  "  network " + network + " area 1\n"
 
 print("Writing '/etc/quagga/ospfd.conf'")
 with open("/etc/quagga/ospfd.conf", "w") as f:
     f.write(ospfd_conf_contents)
+# print(ospfd_conf_contents)
 
-# ! -*- zebra -*-
-# hostname host1
-# password zebra
-# enable password zebra
+zebra_conf_contents = r"""! -*- zebra -*-
+hostname {host}
+password zebra
+enable password zebra
+log file /var/log/quagga/zebra.log
+""".format(host=socket.gethostname())
 
-# log file /var/log/quagga/zebra.log
+print("Writing '/etc/quagga/zebra.conf'")
+with open("/etc/quagga/zebra.conf", "w") as f:
+    f.write(zebra_conf_contents)
+# print(zebra_conf_contents)
 
-# interface enp0s8
-# ip address 192.168.100.10/24
-# ip forwarding
-
-# interface enp0s9
-# ip address 192.168.199.10/24
-# ip forwarding
+run("service quagga restart")
