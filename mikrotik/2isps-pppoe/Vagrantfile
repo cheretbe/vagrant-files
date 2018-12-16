@@ -88,7 +88,8 @@ Vagrant.configure("2") do |config|
     isp1.vm.provision "file", source: "isp1_pppoe_settings.sh", destination: "isp1_pppoe_settings.sh"
     isp1.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
       destination: "pppoe-server-provision.sh"
-    isp1.vm.provision "file", source: "quagga_provision.py", destination: "quagga_provision.py"
+    isp1.vm.provision "file", source: "../../linux/provision/quagga_ospf.py",
+      destination: "quagga_ospf.py"
     isp1.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled then
@@ -100,11 +101,11 @@ Vagrant.configure("2") do |config|
           )
           if $?.exitstatus > 0 then raise "Error in pppoe-server-provision.sh" end
           system("vagrant", "ssh", "#{machine.name}", "--",
-            "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_provision.py " +
+            "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_ospf.py " +
             "#{nic_macs[2]} --router-id 172.24.0.1 " +
             "--networks 192.168.51.0/24 172.24.0.0/24"
           )
-          if $?.exitstatus > 0 then raise "Error in quagga_provision.py" end
+          if $?.exitstatus > 0 then raise "Error in quagga_ospf.py" end
         end
       end
     end
@@ -128,7 +129,8 @@ Vagrant.configure("2") do |config|
     isp2.vm.provision "file", source: "isp2_pppoe_settings.sh", destination: "isp2_pppoe_settings.sh"
     isp2.vm.provision "file", source: "../../linux/provision/pppoe-server-provision.sh",
       destination: "pppoe-server-provision.sh"
-    isp2.vm.provision "file", source: "quagga_provision.py", destination: "quagga_provision.py"
+    isp2.vm.provision "file", source: "../../linux/provision/quagga_ospf.py",
+      destination: "quagga_ospf.py"
     isp2.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled then
@@ -140,11 +142,11 @@ Vagrant.configure("2") do |config|
           )
           if $?.exitstatus > 0 then raise "Error in pppoe-server-provision.sh" end
           system("vagrant", "ssh", "#{machine.name}", "--",
-            "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_provision.py " +
+            "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_ospf.py " +
             "#{nic_macs[2]} --router-id 172.24.0.2 " +
             "--networks 192.168.52.0/24 172.24.0.0/24"
           )
-          if $?.exitstatus > 0 then raise "Error in quagga_provision.py" end
+          if $?.exitstatus > 0 then raise "Error in quagga_ospf.py" end
         end
       end
     end
@@ -168,18 +170,20 @@ Vagrant.configure("2") do |config|
 
     remote_server.vm.provision "shell", path: "../../linux/provision/ubuntu-provision.sh", keep_color: true
     remote_server.vm.provision "shell", path: "../../linux/provision/vb-guest-additions-provision.sh", keep_color: true
-    remote_server.vm.provision "file", source: "quagga_provision.py",
-      destination: "quagga_provision.py"
+    remote_server.vm.provision "file", source: "../../linux/provision/quagga_ospf.py",
+      destination: "quagga_ospf.py"
 
     remote_server.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
-        nic_macs = get_vb_nic_mac_address_list(machine)
-        system("vagrant", "ssh", "#{machine.name}", "--",
-          "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_provision.py " +
-          "#{nic_macs[1]} --router-id 172.24.0.3 " +
-          "--networks 172.24.0.0/24"
-        )
-        if $?.exitstatus > 0 then raise "Error in quagga_provision.py" end
+        if machine.custom_provision_enabled then
+          nic_macs = get_vb_nic_mac_address_list(machine)
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            "/usr/bin/sudo /usr/bin/python3 /home/vagrant/quagga_ospf.py " +
+            "#{nic_macs[1]} --router-id 172.24.0.3 " +
+            "--networks 172.24.0.0/24"
+          )
+          if $?.exitstatus > 0 then raise "Error in quagga_ospf.py" end
+        end
       end
     end
   end
