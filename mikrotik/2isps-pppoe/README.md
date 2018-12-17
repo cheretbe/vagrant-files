@@ -24,6 +24,7 @@ end
 ```
 vagrant ssh
 
+/system identity set name="new_router"
 /interface print detail
 
 /interface ethernet set [find name="ether3"] name=inter_isp
