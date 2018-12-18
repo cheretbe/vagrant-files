@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require_relative "../provision/common.rb"
+require_relative "../../host-scripts/common.rb"
+
+Vagrant.configure("2") do |config|
+  config.vm.define :central_isp do |central_isp|
+    central_isp.vm.box = "cheretbe/routeros"
+    # central_isp.vm.box = "mt-test"
+    central_isp.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
+    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-central-lan", auto_config: false
+
+    central_isp.trigger.after :up, :provision, :reload, :resume do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled then
+          # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
+          # by the original Vagrantfile
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            ":global interIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
+            ":global lanMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
+          )
+          upload_mikrotik_script(machine, "central_isp_provision.rsc", "central_isp_provision")
+          system "vagrant ssh #{machine.name} -- /system script run central_isp_provision"
+        end
+      end
+    end
+  end
+end
