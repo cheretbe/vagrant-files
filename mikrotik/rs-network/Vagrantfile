@@ -59,6 +59,7 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
     pregol_router.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp", auto_config: false
+    pregol_router.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_lan", auto_config: false
 
     pregol_router.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
@@ -66,7 +67,9 @@ Vagrant.configure("2") do |config|
           # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
           # by the original Vagrantfile
           system("vagrant", "ssh", "#{machine.name}", "--",
-            ":global PregolIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\""
+            ":global pregolIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
+            ":global pregolLanMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
+
           )
           upload_mikrotik_script(machine, "pregol_router_provision.rsc", "pregol_router_provision")
           system "vagrant ssh #{machine.name} -- /system script run pregol_router_provision"
