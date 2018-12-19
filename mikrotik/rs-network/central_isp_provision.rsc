@@ -21,14 +21,21 @@
   /ip address add address="172.24.0.20/24" interface="inter_isp"
 }
 
-do {
-  if ([/routing ospf interface get [find interface="inter_isp"] hello-interval] !=1) do={
-    :put "Setting OSPF hello-interval to 1 on interface 'inter_isp'"
-    /routing ospf interface add hello-interval=1s interface=inter_isp
-  } 
-} on-error={}
+:if ([/routing ospf instance get [find name="default"] router-id] != "172.24.0.20") do={
+  /routing ospf instance set [find name="default"] router-id=172.24.0.20
+}
 
-#/routing ospf interface add hello-interval=1s interface=inter_isp
-#/routing ospf instance set 0 router-id=172.24.0.10
-#/routing ospf area add area-id=0.0.0.1 name=inter_isp
-#/routing ospf network add network=172.24.0.0/24 area=inter_isp
+:if ([:len [/routing ospf interface find interface="inter_isp"]] = 0) do={
+  :put "Adding OSPF interface 'inter_isp' with hello-interval of 1s"
+  /routing ospf interface add hello-interval=1s interface=inter_isp
+}
+
+:if ([:len [/routing ospf area find name="inter_isp"]] = 0) do={
+  :put "Adding OSPF area with ID 0.0.0.1"
+  /routing ospf area add area-id=0.0.0.1 name=inter_isp
+}
+
+:if ([:len [/routing ospf network find network="172.24.0.0/24"]] = 0) do={
+  :put "Adding OSPF network 172.24.0.0/24"
+  /routing ospf network add network=172.24.0.0/24 area=inter_isp
+}
