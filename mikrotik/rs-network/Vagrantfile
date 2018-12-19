@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
     central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
-    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-central-lan", auto_config: false
+    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-central_isp-intnet", auto_config: false
 
     central_isp.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
@@ -35,7 +35,7 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
     pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
-    pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-central-lan", auto_config: false
+    pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp-intnet", auto_config: false
 
     pregol_isp.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
@@ -48,6 +48,28 @@ Vagrant.configure("2") do |config|
           )
           upload_mikrotik_script(machine, "pregol_isp_provision.rsc", "pregol_isp_provision")
           system "vagrant ssh #{machine.name} -- /system script run pregol_isp_provision"
+        end
+      end
+    end
+  end
+
+  config.vm.define :pregol_router do |pregol_router|
+    pregol_router.vm.box = "cheretbe/routeros"
+    pregol_router.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    pregol_router.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp-intnet", auto_config: false
+
+    pregol_router.trigger.after :up, :provision, :reload, :resume do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled then
+          # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
+          # by the original Vagrantfile
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            ":global PregolIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\""
+          )
+          upload_mikrotik_script(machine, "pregol_router_provision.rsc", "pregol_router_provision")
+          system "vagrant ssh #{machine.name} -- /system script run pregol_router_provision"
         end
       end
     end
