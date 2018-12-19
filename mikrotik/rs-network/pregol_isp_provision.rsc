@@ -12,13 +12,18 @@
 }
 
 :if ([/interface ethernet get [find mac-address="$pregolIspMACaddr"] name] != "pregol_isp") do={
-  :put "Setting '$pregolIspMACaddr' interface name to 'pregole_isp'"
+  :put "Setting '$pregolIspMACaddr' interface name to 'pregol_isp'"
   /interface ethernet set [find mac-address="$pregolIspMACaddr"] name="pregol_isp"
 }
 
 :if ([:len [/ip address find interface="inter_isp"]] = 0) do={
   :put "Adding IP 172.24.0.21/24 on interface 'inter_isp'"
   /ip address add address="172.24.0.21/24" interface="inter_isp"
+}
+
+:if ([:len [/ip address find interface="pregol_isp"]] = 0) do={
+  :put "Adding IP 192.168.53.1/24 on interface 'pregol_isp'"
+  /ip address add address="192.168.53.1/24" interface="pregol_isp"
 }
 
 :if ([/routing ospf instance get [find name="default"] router-id] != "172.24.0.21") do={

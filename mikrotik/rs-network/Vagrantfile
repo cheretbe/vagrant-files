@@ -69,7 +69,6 @@ Vagrant.configure("2") do |config|
           system("vagrant", "ssh", "#{machine.name}", "--",
             ":global pregolIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
             ":global pregolLanMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
-
           )
           upload_mikrotik_script(machine, "pregol_router_provision.rsc", "pregol_router_provision")
           system "vagrant ssh #{machine.name} -- /system script run pregol_router_provision"
