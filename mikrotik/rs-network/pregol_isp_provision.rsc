@@ -1,5 +1,5 @@
 :global interIspMACaddr
-:global lanMACaddr
+:global pregolIspMACaddr
 
 :if ([/system identity get name] != "pregol_isp") do={
   :put "Setting identity to 'pregol_isp'"
@@ -11,9 +11,9 @@
   /interface ethernet set [find mac-address="$interIspMACaddr"] name="inter_isp"
 }
 
-:if ([/interface ethernet get [find mac-address="$lanMACaddr"] name] != "lan") do={
-  :put "Setting '$lanMACaddr' interface name to 'lan'"
-  /interface ethernet set [find mac-address="$lanMACaddr"] name="lan"
+:if ([/interface ethernet get [find mac-address="$pregolIspMACaddr"] name] != "pregol_isp") do={
+  :put "Setting '$pregolIspMACaddr' interface name to 'pregole_isp'"
+  /interface ethernet set [find mac-address="$pregolIspMACaddr"] name="pregol_isp"
 }
 
 :if ([:len [/ip address find interface="inter_isp"]] = 0) do={
