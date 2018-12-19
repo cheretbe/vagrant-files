@@ -3,9 +3,9 @@
 ![network_diagram](docs/network_diagram.png)
 
 * vagrant-lan: 172.25.0.0/24
-* vagrant-isp1-intnet: 192.168.51.0/24
-* vagrant-isp2-intnet: 192.168.52.0/24
-* vagrant-inter_isp-intnet: 172.24.0.0/24
+* vagrant-isp1: 192.168.51.0/24
+* vagrant-isp2: 192.168.52.0/24
+* vagrant-inter_isp: 172.24.0.0/24
 
 ### Adding additional VMs to Inter-ISP network
 #### Mikrotik
@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
   end
-  config.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
+  config.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp", auto_config: false
 end
 ```
 ```

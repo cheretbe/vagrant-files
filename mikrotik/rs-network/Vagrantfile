@@ -10,8 +10,8 @@ Vagrant.configure("2") do |config|
     central_isp.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
-    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-central_isp-intnet", auto_config: false
+    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp", auto_config: false
+    central_isp.vm.network "private_network", virtualbox__intnet: "vagrant-central_isp", auto_config: false
 
     central_isp.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
@@ -34,8 +34,8 @@ Vagrant.configure("2") do |config|
     pregol_isp.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp-intnet", auto_config: false
-    pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp-intnet", auto_config: false
+    pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp", auto_config: false
+    pregol_isp.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp", auto_config: false
 
     pregol_isp.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
@@ -58,7 +58,7 @@ Vagrant.configure("2") do |config|
     pregol_router.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    pregol_router.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp-intnet", auto_config: false
+    pregol_router.vm.network "private_network", virtualbox__intnet: "vagrant-pregol_isp", auto_config: false
 
     pregol_router.trigger.after :up, :provision, :reload, :resume do |trigger|
       trigger.ruby do |env,machine|
