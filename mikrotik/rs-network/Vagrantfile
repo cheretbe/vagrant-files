@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
           # by the original Vagrantfile
           system("vagrant", "ssh", "#{machine.name}", "--",
             ":global interIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
-            ":global lanMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
+            ":global centralIspMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
           )
           upload_mikrotik_script(machine, "central_isp_provision.rsc", "central_isp_provision")
           system "vagrant ssh #{machine.name} -- /system script run central_isp_provision"

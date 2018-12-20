@@ -1,5 +1,5 @@
 :global interIspMACaddr
-:global lanMACaddr
+:global centralIspMACaddr
 
 :if ([/system identity get name] != "central_isp") do={
   :put "Setting identity to 'central_isp'"
@@ -11,9 +11,9 @@
   /interface ethernet set [find mac-address="$interIspMACaddr"] name="inter_isp"
 }
 
-:if ([/interface ethernet get [find mac-address="$lanMACaddr"] name] != "lan") do={
-  :put "Setting '$lanMACaddr' interface name to 'lan'"
-  /interface ethernet set [find mac-address="$lanMACaddr"] name="lan"
+:if ([/interface ethernet get [find mac-address="$centralIspMACaddr"] name] != "central_isp") do={
+  :put "Setting '$centralIspMACaddr' interface name to 'central_isp'"
+  /interface ethernet set [find mac-address="$centralIspMACaddr"] name="central_isp"
 }
 
 :if ([:len [/ip address find interface="inter_isp"]] = 0) do={
