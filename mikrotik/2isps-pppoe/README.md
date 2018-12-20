@@ -31,7 +31,7 @@ vagrant ssh
 /ip address add address=172.24.0.10/24 interface=inter_isp
 
 /routing ospf interface add hello-interval=1s interface=inter_isp
-/routing ospf instance set 0 router-id=172.24.0.10
+/routing ospf instance set [find name="default"] router-id=172.24.0.10
 /routing ospf area add area-id=0.0.0.1 name=inter_isp
 /routing ospf network add network=172.24.0.0/24 area=inter_isp
 ```
