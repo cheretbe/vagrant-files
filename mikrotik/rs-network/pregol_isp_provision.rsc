@@ -44,3 +44,8 @@
   :put "Adding OSPF network 172.24.0.0/24"
   /routing ospf network add network=172.24.0.0/24 area=inter_isp
 }
+
+:if ([:len [/routing ospf network find network="192.168.53.0/24"]] = 0) do={
+  :put "Adding OSPF network 192.168.53.0/24"
+  /routing ospf network add network=192.168.53.0/24 area=inter_isp
+}

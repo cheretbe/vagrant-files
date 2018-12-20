@@ -31,3 +31,8 @@
   /ip firewall nat add action=masquerade chain=srcnat \
     out-interface="wan" src-address=192.168.156.32/27
 }
+
+:if ([:len [/ip route find gateway="192.168.53.1" and dst-address="0.0.0.0/0"]] = 0) do={
+  :put "Adding default route via 192.168.53.1"
+  /ip route add gateway=192.168.53.1
+}
