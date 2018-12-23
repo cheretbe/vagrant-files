@@ -49,3 +49,14 @@
   :put "Adding OSPF network 192.168.53.0/24"
   /routing ospf network add network=192.168.53.0/24 area=inter_isp
 }
+
+:if (! [/interface l2tp-server server get enabled]) do={
+  :put "Enabling L2TP server"
+  /interface l2tp-server server set authentication=mschap2 enabled=yes
+}
+
+:if ([:len [/ppp secret find name="central"]] = 0) do={
+  :put "Adding L2TP user 'central'"
+  /ppp secret add name=central password=central local-address=192.168.53.1 \
+    remote-address=192.168.53.2 service=l2tp
+}

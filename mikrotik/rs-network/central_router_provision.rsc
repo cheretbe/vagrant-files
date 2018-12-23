@@ -22,8 +22,14 @@
 }
 
 :if ([:len [/ip address find interface="lan"]] = 0) do={
-  :put "Adding IP 192.168.156.31/27 on interface 'lan'"
-  /ip address add address="192.168.156.31/27" interface="lan"
+  :put "Adding IP 192.168.156.1/27 on interface 'lan'"
+  /ip address add address="192.168.156.1/27" interface="lan"
+}
+
+:if ([:len [/interface l2tp-client find name="wan"]] = 0) do={
+  :put "Adding L2TP connection to 192.168.100.1"
+  /interface l2tp-client add name=wan add-default-route=yes allow=mschap2 \
+    connect-to=192.168.100.1 disabled=no user=central password=central
 }
 
 :if ([:len [/ip firewall nat find action=masquerade and out-interface="wan"]] = 0) do={
@@ -32,7 +38,7 @@
     out-interface="wan" src-address=192.168.156.0/27
 }
 
-:if ([:len [/ip route find gateway="192.168.53.1" and dst-address="0.0.0.0/0"]] = 0) do={
-  :put "Adding default route via 192.168.53.1"
-  /ip route add gateway=192.168.53.1
-}
+#:if ([:len [/ip route find gateway="192.168.53.1" and dst-address="0.0.0.0/0"]] = 0) do={
+#  :put "Adding default route via 192.168.53.1"
+#  /ip route add gateway=192.168.53.1
+#}
