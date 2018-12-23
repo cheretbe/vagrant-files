@@ -12,8 +12,52 @@
     * wan: 192.168.54.2/24
     * lan: 192.168.156.33/27
     * tunnels
-        * 172.16.0.9 (mt_router wan1) <--> 172.16.0.10 (pregol_router)
-        * 172.16.0.13 (mt_router wan2) <--> 172.16.0.14 (pregol_router)
+        * 172.16.0.1 (mt_router wan1) <--> 172.16.0.3 (pregol_router)
+        * 172.17.0.1 (mt_router wan2) <--> 172.17.0.3 (pregol_router)
 
 GUR IPsec connection is in tunnel mode, so no OSPF routing is possible
 (see "Tunnel vs. Transport" section in https://mum.mikrotik.com/presentations/HR13/kirnak.pdf)
+
+
+Office
+```
+/interface l2tp-server server set authentication=mschap2 enabled=yes
+
+/ppp secret add name=central_main local-address=172.16.0.1 remote-address=172.16.0.2 \
+  service=l2tp
+/ppp secret add name=central_backup local-address=172.17.0.1 remote-address=172.17.0.2 \
+  service=l2tp
+/ppp secret add name=pregol_main local-address=172.16.0.1 remote-address=172.16.0.3 \
+  service=l2tp
+/ppp secret add name=pregol_backup local-address=172.17.0.1 remote-address=172.17.0.3 \
+  service=l2tp
+
+/routing ospf instance set [ find default=yes ] router-id=172.25.0.1
+/routing ospf interface add interface=lan network-type=broadcast passive=yes
+/routing ospf network add area=backbone network=172.16.0.0/24
+/routing ospf network add area=backbone network=172.25.0.0/24
+```
+
+Central
+```
+/interface l2tp-client add name=office_main connect-to=192.168.51.9 disabled=no \
+  user=central_main
+/interface l2tp-client add name=office_backup connect-to=192.168.52.9 disabled=no \
+  user=central_backup
+
+/routing ospf instance set [ find default=yes ] router-id=192.168.156.1
+/routing ospf interface add interface=lan network-type=broadcast passive=yes
+/routing ospf network add area=backbone network=172.16.0.0/24
+/routing ospf network add area=backbone network=192.168.156.0/27
+```
+
+Pregol
+```
+/interface l2tp-client add name=office_main connect-to=192.168.51.9 disabled=no \
+  user=pregol_main
+
+/routing ospf instance set [ find default=yes ] router-id=192.168.156.33
+/routing ospf interface add interface=lan network-type=broadcast passive=yes
+/routing ospf network add area=backbone network=172.16.0.0/24
+/routing ospf network add area=backbone network=192.168.156.32/27
+```
