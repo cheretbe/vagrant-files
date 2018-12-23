@@ -29,6 +29,30 @@ Vagrant.configure("2") do |config|
     end
   end
 
+  config.vm.define :central_router do |central_router|
+    central_router.vm.box = "cheretbe/routeros"
+    central_router.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    central_router.vm.network "private_network", virtualbox__intnet: "vagrant-central_isp", auto_config: false
+    central_router.vm.network "private_network", virtualbox__intnet: "vagrant-central_lan", auto_config: false
+
+    central_router.trigger.after :up, :provision, :reload, :resume do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled then
+          # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
+          # by the original Vagrantfile
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            ":global centralIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
+            ":global centralLanMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
+          )
+          upload_mikrotik_script(machine, "central_router_provision.rsc", "central_router_provision")
+          system "vagrant ssh #{machine.name} -- /system script run central_router_provision"
+        end
+      end
+    end
+  end
+
   config.vm.define :pregol_isp do |pregol_isp|
     pregol_isp.vm.box = "cheretbe/routeros"
     pregol_isp.vm.provider "virtualbox" do |vb|

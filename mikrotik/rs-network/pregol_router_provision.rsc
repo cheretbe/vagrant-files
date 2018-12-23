@@ -17,8 +17,8 @@
 }
 
 :if ([:len [/ip address find interface="wan"]] = 0) do={
-  :put "Adding IP 192.168.53.2/24 on interface 'wan'"
-  /ip address add address="192.168.53.2/24" interface="wan"
+  :put "Adding IP 192.168.54.2/24 on interface 'wan'"
+  /ip address add address="192.168.54.2/24" interface="wan"
 }
 
 :if ([:len [/ip address find interface="lan"]] = 0) do={
@@ -32,7 +32,7 @@
     out-interface="wan" src-address=192.168.156.32/27
 }
 
-:if ([:len [/ip route find gateway="192.168.53.1" and dst-address="0.0.0.0/0"]] = 0) do={
-  :put "Adding default route via 192.168.53.1"
-  /ip route add gateway=192.168.53.1
+:if ([:len [/ip route find gateway="192.168.54.1" and dst-address="0.0.0.0/0"]] = 0) do={
+  :put "Adding default route via 192.168.54.1"
+  /ip route add gateway=192.168.54.1
 }

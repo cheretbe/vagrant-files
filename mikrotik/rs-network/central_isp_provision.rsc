@@ -21,6 +21,11 @@
   /ip address add address="172.24.0.20/24" interface="inter_isp"
 }
 
+:if ([:len [/ip address find interface="central_isp"]] = 0) do={
+  :put "Adding IP 192.168.100.1/24 on interface 'central_isp'"
+  /ip address add address="192.168.100.1/24" interface="central_isp"
+}
+
 :if ([/routing ospf instance get [find name="default"] router-id] != "172.24.0.20") do={
   /routing ospf instance set [find name="default"] router-id=172.24.0.20
 }
@@ -38,4 +43,9 @@
 :if ([:len [/routing ospf network find network="172.24.0.0/24"]] = 0) do={
   :put "Adding OSPF network 172.24.0.0/24"
   /routing ospf network add network=172.24.0.0/24 area=inter_isp
+}
+
+:if ([:len [/routing ospf network find network="192.168.53.0/24"]] = 0) do={
+  :put "Adding OSPF network 192.168.53.0/24"
+  /routing ospf network add network=192.168.53.0/24 area=inter_isp
 }

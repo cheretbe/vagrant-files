@@ -22,8 +22,8 @@
 }
 
 :if ([:len [/ip address find interface="pregol_isp"]] = 0) do={
-  :put "Adding IP 192.168.53.1/24 on interface 'pregol_isp'"
-  /ip address add address="192.168.53.1/24" interface="pregol_isp"
+  :put "Adding IP 192.168.54.1/24 on interface 'pregol_isp'"
+  /ip address add address="192.168.54.1/24" interface="pregol_isp"
 }
 
 :if ([/routing ospf instance get [find name="default"] router-id] != "172.24.0.21") do={
@@ -45,7 +45,7 @@
   /routing ospf network add network=172.24.0.0/24 area=inter_isp
 }
 
-:if ([:len [/routing ospf network find network="192.168.53.0/24"]] = 0) do={
-  :put "Adding OSPF network 192.168.53.0/24"
-  /routing ospf network add network=192.168.53.0/24 area=inter_isp
+:if ([:len [/routing ospf network find network="192.168.54.0/24"]] = 0) do={
+  :put "Adding OSPF network 192.168.54.0/24"
+  /routing ospf network add network=192.168.54.0/24 area=inter_isp
 }

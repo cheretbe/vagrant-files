@@ -1,0 +1,8 @@
+/interface l2tp-server server
+set authentication=mschap2 enabled=yes
+
+/ppp secret
+add local-address=192.168.53.1 name=central password=central remote-address=192.168.53.2 service=l2tp
+
+/interface l2tp-client
+add add-default-route=yes allow=mschap2 connect-to=192.168.100.1 disabled=no name=wan password=central user=central
