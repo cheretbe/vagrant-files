@@ -39,6 +39,12 @@ Office
 /ppp secret add name=pregol_backup local-address=172.17.0.1 remote-address=172.17.0.3 \
   service=l2tp
 
+/interface sstp-server server set authentication=mschap2 enabled=yes port=20443
+
+/ppp secret
+add local-address=172.17.0.1 name=yantar_backup remote-address=172.17.0.5 service=sstp
+add local-address=172.16.0.1 name=yantar_main remote-address=172.16.0.5 service=l2tp
+
 /routing ospf instance set [ find default=yes ] router-id=172.25.0.1
 /routing ospf interface add interface=lan network-type=broadcast passive=yes
 /routing ospf network add area=backbone network=172.16.0.0/24
