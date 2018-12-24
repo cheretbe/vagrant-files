@@ -17,6 +17,9 @@
 * yantar_isp
     * inter_isp: 172.24.0.23/24
     * yantar_isp: 192.168.56.1/24
+* yantar_router
+    * wan: 192.168.56.2/24
+    * lan: 192.168.156.97/27
 
 
 GUR IPsec connection is in tunnel mode, so no OSPF routing is possible
