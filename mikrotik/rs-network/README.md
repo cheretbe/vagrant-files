@@ -14,6 +14,10 @@
     * tunnels
         * 172.16.0.1 (mt_router wan1) <--> 172.16.0.3 (pregol_router)
         * 172.17.0.1 (mt_router wan2) <--> 172.17.0.3 (pregol_router)
+* yantar_isp
+    * inter_isp: 172.24.0.23/24
+    * yantar_isp: 192.168.56.1/24
+
 
 GUR IPsec connection is in tunnel mode, so no OSPF routing is possible
 (see "Tunnel vs. Transport" section in https://mum.mikrotik.com/presentations/HR13/kirnak.pdf)

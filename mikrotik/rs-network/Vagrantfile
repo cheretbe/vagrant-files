@@ -100,4 +100,28 @@ Vagrant.configure("2") do |config|
       end
     end
   end
+
+  config.vm.define :yantar_isp do |yantar_isp|
+    yantar_isp.vm.box = "cheretbe/routeros"
+    yantar_isp.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    yantar_isp.vm.network "private_network", virtualbox__intnet: "vagrant-inter_isp", auto_config: false
+    yantar_isp.vm.network "private_network", virtualbox__intnet: "vagrant-yantar_isp", auto_config: false
+
+    yantar_isp.trigger.after :up, :provision, :reload, :resume do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled then
+          # [!] 0-based vm_NIC_mac_addresses array should be initialized at this point
+          # by the original Vagrantfile
+          system("vagrant", "ssh", "#{machine.name}", "--",
+            ":global interIspMACaddr \"" + machine.vm_NIC_mac_addresses[2] + "\"; " +
+            ":global yantarIspMACaddr \"" + machine.vm_NIC_mac_addresses[3] + "\""
+          )
+          upload_mikrotik_script(machine, "yantar_isp_provision.rsc", "yantar_isp_provision")
+          system "vagrant ssh #{machine.name} -- /system script run yantar_isp_provision"
+        end
+      end
+    end
+  end
 end
