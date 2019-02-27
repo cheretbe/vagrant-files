@@ -1,8 +1,5 @@
 
 ```ruby
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
-
 # Require the AWS provider plugin
 require 'vagrant-aws'
 
