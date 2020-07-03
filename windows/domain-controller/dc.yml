@@ -1,6 +1,6 @@
 ---
 
-- name: Provision test
+- name: Domain controller provision
   hosts: all
 
   tasks:
@@ -35,17 +35,37 @@
       retries: 40
       delay: 30
 
+    - name: Add admin user 'test@dummy.local'
+      win_domain_user:
+        name: test
+        password: "`1q`1q`1q"
+        state: present
+        groups:
+          - Domain Admins
+
+    - name: Check if custom top-level OU exists
+      win_shell: Get-ADOrganizationalUnit -Identity 'OU=ou_test,DC=dummy,DC=local'
+      register: test_ou
+      changed_when: false
+      failed_when: false
+      # ignore_errors: true
+
     - name: Check if custom computers OU exists
-      win_shell: Get-ADOrganizationalUnit -Identity 'OU=computers_test1,OU=ou_test,DC=dummy,DC=local'
+      win_shell: Get-ADOrganizationalUnit -Identity 'OU=computers_test,OU=ou_test,DC=dummy,DC=local'
       register: computers_ou
       changed_when: false
-      ignore_errors: true
+      failed_when: false
+      # ignore_errors: true
 
-    - debug: var=computers_ou
+    # - debug: var=computers_ou
+
+    - name: Create custom top-level OU
+      win_shell: New-ADOrganizationalUnit -Name 'ou_test' -Path 'DC=dummy,DC=local'
+      when: test_ou.rc != 0
 
     - name: Create custom computers OU
-      win_shell: New-ADOrganizationalUnit -Name 'computers_test1' -Path 'OU=ou_test,DC=dummy,DC=local'
-      when: computers_ou is failed
+      win_shell: New-ADOrganizationalUnit -Name 'computers_test' -Path 'OU=ou_test,DC=dummy,DC=local'
+      when: computers_ou.rc != 0
 
     - name: Update Ansible host facts
       setup:
