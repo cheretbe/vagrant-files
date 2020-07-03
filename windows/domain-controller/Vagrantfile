@@ -1,0 +1,24 @@
+ansible_version = `ansible --version`
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "cheretbe/winsrv2019_en_64"
+  config.winrm.username = "vagrant"
+  config.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+  config.vm.boot_timeout = 900
+  config.vm.hostname = "dc"
+  # config.vm.network "private_network", ip: "10.0.2.15"
+  config.vm.network "private_network", ip: "192.168.199.10", virtualbox__intnet: "vagrant-domain"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+  end
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "dc.yml"
+    ansible.extra_vars = {
+      "ansible_winrm_scheme": "http"
+    }
+  end
+end

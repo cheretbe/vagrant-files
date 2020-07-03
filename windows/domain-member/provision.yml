@@ -1,0 +1,37 @@
+---
+
+- name: Domain member provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Set domain DNS server on all network adapters
+      win_dns_client:
+        adapter_names: '*'
+        ipv4_addresses: [192.168.199.10]
+        log_path: C:\dns_log.txt
+
+    - name: Join 'dummy.local' domain
+      win_domain_membership:
+        dns_domain_name: dummy.local
+        hostname: win-client-1
+        domain_admin_user: test@dummy.local
+        domain_admin_password: "`1q`1q`1q"
+        # domain_ou_path: "OU=ou_test,DC=dummy,DC=local"
+        domain_ou_path: "OU=computers_test,OU=ou_test,DC=dummy,DC=local"
+        state: domain
+      register: domain_join_state
+
+    - name: Reboot after joining domain
+      win_reboot:
+      when: domain_join_state.reboot_required
+
+    - name: Update Ansible host facts
+      setup:
+
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"

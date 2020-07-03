@@ -1,0 +1,55 @@
+---
+
+- name: Provision test
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Install AD Services feature
+      win_feature:
+        name: AD-Domain-Services
+        include_management_tools: yes
+        include_sub_features: yes
+        state: present
+      register: result
+
+    - name: Create 'dummy.local' domain
+      win_domain:
+        dns_domain_name: dummy.local
+        safe_mode_password: "`1q"
+      register: result
+
+    - name: Reboot after domain creation
+      win_reboot:
+        msg: "Server config in progress; rebooting..."
+      when: result.reboot_required
+
+    - name: Wait for AD services to become available
+      win_shell: Get-ADComputer 'dc'
+      register: get_ad_computer_result
+      changed_when: false
+      until: get_ad_computer_result.rc == 0
+      retries: 40
+      delay: 30
+
+    - name: Check if custom computers OU exists
+      win_shell: Get-ADOrganizationalUnit -Identity 'OU=computers_test1,OU=ou_test,DC=dummy,DC=local'
+      register: computers_ou
+      changed_when: false
+      ignore_errors: true
+
+    - debug: var=computers_ou
+
+    - name: Create custom computers OU
+      win_shell: New-ADOrganizationalUnit -Name 'computers_test1' -Path 'OU=ou_test,DC=dummy,DC=local'
+      when: computers_ou is failed
+
+    - name: Update Ansible host facts
+      setup:
+
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
