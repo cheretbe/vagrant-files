@@ -1,0 +1,29 @@
+/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+network: {config: disabled}
+
+network:
+    ethernets:
+        enp0s3:
+            dhcp4: true
+            dhcp4-overrides:
+                use-dns: no
+            match:
+                macaddress: 02:12:97:df:f3:54
+            set-name: enp0s3
+            nameservers:
+                addresses: [192.168.199.10]
+    version: 2
+
+
+
+
+
+net ads leave test.local -U administrator
+# leave does NOT unregister DNS entries
+net ads dns unregister dummy.test.local -U administrator
+
+
+To prevent net ads join adding multiple DNS entries when several ethernet interfaces are present,
+add interfaces option to /etc/samba/smb.conf
+
+interfaces = enp0s9
