@@ -22,6 +22,11 @@
         safe_mode_password: "`1q"
       register: result
 
+    - name: Set DNS server on all network adapters
+      win_dns_client:
+        adapter_names: '*'
+        ipv4_addresses: [192.168.199.10]
+
     - name: Reboot after domain creation
       win_reboot:
         msg: "Server config in progress; rebooting..."

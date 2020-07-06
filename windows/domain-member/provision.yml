@@ -12,7 +12,6 @@
       win_dns_client:
         adapter_names: '*'
         ipv4_addresses: [192.168.199.10]
-        log_path: C:\dns_log.txt
 
     - name: Join 'dummy.local' domain
       win_domain_membership:
