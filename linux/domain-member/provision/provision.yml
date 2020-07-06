@@ -6,6 +6,13 @@
 # Shared repo checkout and pip packages example:
 # https://github.com/cheretbe/notes/blob/master/vagrant.md#ansible-provision
   tasks:
-    - name: Sample task
+    - name: Show box info
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Checkout shared playbooks repo
+      git:
+        repo: "https://github.com/cheretbe/ansible-playbooks.git"
+        dest: "/ansible-playbooks"
+
+    - include_role: name="/ansible-playbooks/linux-dns"
