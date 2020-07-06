@@ -1,43 +1,56 @@
 #!/usr/bin/env python3
 
-import yaml
+import os
 import subprocess
+import yaml
 
 def main():
     cloud_config_updated = False
     with open("/etc/netplan/50-cloud-init.yaml") as conf_f:
-        net_config = yaml.safe_load(conf_f)
+        cloud_config = yaml.safe_load(conf_f)
 
-    for if_name, if_config in net_config["network"]["ethernets"].items():
+    for if_name, if_config in cloud_config["network"]["ethernets"].items():
         if if_config.get("dhcp4-overrides") is None:
             if_config["dhcp4-overrides"] = {"use-dns": False}
             cloud_config_updated = True
 
     if cloud_config_updated:
         with open("/etc/netplan/50-cloud-init.yaml", "w") as conf_f:
-            conf_f.write(yaml.dump(net_config, default_flow_style=False))
+            conf_f.write(yaml.dump(cloud_config, default_flow_style=False))
 
-
-    vagrant_config_updated = False
     with open("/etc/netplan/50-vagrant.yaml") as conf_f:
-        net_config = yaml.safe_load(conf_f)
+        vagrant_config = yaml.safe_load(conf_f)
 
     intnet_if_name = None
-    intnet_if_config = None
-    for if_name, if_config in net_config["network"]["ethernets"].items():
+    for if_name, if_config in vagrant_config["network"]["ethernets"].items():
         if if_config["addresses"] == ["192.168.199.12/24"]:
             intnet_if_name = if_name
-            intnet_if_config = if_config
 
-    if intnet_if_config.get("nameservers") != {"addresses": ["192.168.199.10"]}:
-        intnet_if_config["nameservers"] = {"addresses": ["192.168.199.10"]}
-        vagrant_config_updated = True
+    custom_dns_config = {
+        "network": {
+            "ethernets": {
+                intnet_if_name: {
+                    "nameservers": {"addresses": ["192.168.199.10"]}
+                }
+            },
+            "renderer": "networkd",
+            "version": 2
+        }
+    }
 
-    if vagrant_config_updated:
-        with open("/etc/netplan/50-vagrant.yaml", "w") as conf_f:
-            conf_f.write(yaml.dump(net_config, default_flow_style=False))
+    custom_config_updated = False
+    if os.path.isfile("/etc/netplan/90-domain-dns.yaml"):
+        with open("/etc/netplan/90-domain-dns.yaml") as conf_f:
+            existing_dns_config = yaml.safe_load(conf_f)
+        custom_config_updated = existing_dns_config != custom_dns_config
+    else:
+        custom_config_updated = True
 
-    if cloud_config_updated or vagrant_config_updated:
+    if custom_config_updated:
+        with open("/etc/netplan/90-domain-dns.yaml", "w") as conf_f:
+            conf_f.write(yaml.dump(custom_dns_config, default_flow_style=False))
+
+    if cloud_config_updated or custom_config_updated:
         subprocess.check_call(["netplan", "apply"])
 
     print(intnet_if_name)
