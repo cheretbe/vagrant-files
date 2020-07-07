@@ -8,6 +8,10 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
+    - name: Set DNS parameters for network interfaces
+      win_command: powershell -executionpolicy bypass -file c:\vagrant\provision\interfaces_dns_settings.ps1
+      changed_when: false
+
     - name: Install AD Services feature
       win_feature:
         name: AD-Domain-Services
@@ -22,10 +26,14 @@
         safe_mode_password: "`1q"
       register: result
 
-    - name: Set DNS server on all network adapters
-      win_dns_client:
-        adapter_names: '*'
-        ipv4_addresses: [192.168.199.10]
+    - name: Set DNS server parameters
+      win_command: powershell -executionpolicy bypass -file c:\vagrant\provision\dns_server_settings.ps1
+      changed_when: false
+
+    # - name: Set DNS server on all network adapters
+    #   win_dns_client:
+    #     adapter_names: '*'
+    #     ipv4_addresses: [192.168.199.10]
 
     - name: Reboot after domain creation
       win_reboot:
