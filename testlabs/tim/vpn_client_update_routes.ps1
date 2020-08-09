@@ -1,10 +1,8 @@
-# $nat_interface = Get-WmiObject Win32_NetworkAdapterConfiguration -filter "ipenabled = 'true'" |
-#   where { -not ($_.IPAddress -contains "192.168.1.10")}
-# $nat_interface = Get-WmiObject Win32_NetworkAdapterConfiguration -filter "ipenabled = 'true'" |
-#   where { -not ($_.IPAddress -contains "192.168.1.10")}
-# Get-NetRoute -AddressFamily IPv4 -InterfaceIndex $nat_interface.InterfaceIndex -DestinationPrefix "0.0.0.0/0" -ErrorAction Continue
+Set-StrictMode -Version Latest
+$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
-# $dummy = Get-NetRoute -AddressFamily IPv4 | Where-Object { ($_.InterfaceIndex -eq $nat_interface.InterfaceIndex) -and ($_.DestinationPrefix -eq "0.0.0.0/0") }
+"There you go" | Out-File -Append -FilePath "c:\users\vagrant\desktop\debug.txt"
+# Start-Sleep -Seconds 5
 
 $natInterface = Get-NetIPInterface -DHCP enabled -AddressFamily IPv4
 $natDefaultRoute = Get-NetRoute -AddressFamily IPv4 | Where-Object {
