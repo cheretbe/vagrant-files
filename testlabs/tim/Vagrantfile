@@ -62,4 +62,18 @@ Vagrant.configure("2") do |config|
     tim_router.vm.provision "routeros_command", name: "Provision",
       command: "/import tim_router_provision.rsc", check_script_error: true
   end
+
+  config.vm.define :"tim-server" do |tim_server|
+    tim_server.vm.box = "cheretbe/winsrv2019_ru_64"
+    tim_server.winrm.username = "vagrant"
+    tim_server.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    tim_server.vm.boot_timeout = 900
+    tim_server.vm.network "private_network", ip: "192.168.2.10", virtualbox__intnet: "vagrant-tim-lan"
+
+    tim_server.vm.provider "virtualbox" do |vb|
+      vb.memory = "4096"
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    end
+  end
 end
