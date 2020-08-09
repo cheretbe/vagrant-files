@@ -1,3 +1,9 @@
+[CmdletBinding()]
+param(
+  [string]$routerIP
+)
+
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
@@ -14,10 +20,10 @@ if (-not($NULL -eq $natDefaultRoute)) {
 } #if
 
 $intNetDefaultRoute = Get-NetRoute -AddressFamily IPv4 | Where-Object {
-  ($_.NextHop -eq "192.168.1.1") -and ($_.DestinationPrefix -eq "0.0.0.0/0")
+  ($_.NextHop -eq $routerIP) -and ($_.DestinationPrefix -eq "0.0.0.0/0")
 }
 if ($NULL -eq $intNetDefaultRoute) {
-  Write-Output "Adding default route via internal network"
-  New-NetRoute -DestinationPrefix "0.0.0.0/0" -NextHop "192.168.1.1" `
-    -InterfaceIndex (Get-NetIPAddress -IPAddress "192.168.1.10").InterfaceIndex | Out-Null
+  Write-Output ("Adding default route via {0}" -f $routerIP)
+  New-NetRoute -DestinationPrefix "0.0.0.0/0" -NextHop $routerIP `
+    -InterfaceIndex (Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Manual).InterfaceIndex | Out-Null
 } #if

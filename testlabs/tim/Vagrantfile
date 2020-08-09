@@ -13,13 +13,14 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
     end
 
-    vpn_client.vm.provision "shell", path: "vpn_client_update_routes.ps1"
+    vpn_client.vm.provision "shell", path: "win_vm_update_routes.ps1",
+      args: "-routerIP 192.168.1.1"
 
-    vpn_client.vm.provision "file", source: "vpn_client_update_routes.ps1",
-      destination: "c:\\users\\vagrant\\vpn_client_update_routes.ps1"
+    vpn_client.vm.provision "file", source: "win_vm_update_routes.ps1",
+      destination: "c:\\users\\vagrant\\win_vm_update_routes.ps1"
 
-    vpn_client.vm.provision "shell", path: "vpn_client_provision.ps1",
-      args: "-taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    vpn_client.vm.provision "shell", path: "win_vm_provision.ps1",
+      args: "-routerIP 192.168.1.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
   end
 
   config.vm.define :"client-router" do |client_router|
@@ -75,5 +76,14 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
     end
+
+    tim_server.vm.provision "shell", path: "win_vm_update_routes.ps1",
+      args: "-routerIP 192.168.2.1"
+
+    tim_server.vm.provision "file", source: "win_vm_update_routes.ps1",
+      destination: "c:\\users\\vagrant\\win_vm_update_routes.ps1"
+
+    tim_server.vm.provision "shell", path: "win_vm_provision.ps1",
+      args: "-routerIP 192.168.2.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
   end
 end
