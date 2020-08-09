@@ -48,4 +48,18 @@ Vagrant.configure("2") do |config|
     isp.vm.provision "routeros_command", name: "Provision",
       command: "/import isp_provision.rsc", check_script_error: true
   end
+
+  config.vm.define :"tim-router" do |tim_router|
+    tim_router.vm.box = "cheretbe/routeros-long-term"
+    tim_router.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    tim_router.vm.network "private_network", virtualbox__intnet: "vagrant-tim-lan", auto_config: false
+    tim_router.vm.network "private_network", virtualbox__intnet: "vagrant-wan", auto_config: false
+
+    tim_router.vm.provision "routeros_file", name: "Upload provison script",
+      source: "tim_router_provision.rsc", destination: "tim_router_provision.rsc"
+    tim_router.vm.provision "routeros_command", name: "Provision",
+      command: "/import tim_router_provision.rsc", check_script_error: true
+  end
 end
