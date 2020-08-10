@@ -7,8 +7,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
-"There you go" | Out-File -Append -FilePath "c:\users\vagrant\desktop\debug.txt"
-# Start-Sleep -Seconds 5
+("{0} - {1}" -f (Get-Date -Format "dd.MM.yyyy HH:mm:ss"), $MyInvocation.MyCommand.Path) |
+  Out-File -Append -FilePath "c:\users\vagrant\desktop\scheduled_task.log"
 
 $natInterface = Get-NetIPInterface -DHCP enabled -AddressFamily IPv4
 $natDefaultRoute = Get-NetRoute -AddressFamily IPv4 | Where-Object {

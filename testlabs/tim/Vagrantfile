@@ -11,6 +11,7 @@ Vagrant.configure("2") do |config|
       vb.memory = "4096"
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
     end
 
     vpn_client.vm.provision "shell", path: "win_vm_update_routes.ps1",
@@ -75,6 +76,7 @@ Vagrant.configure("2") do |config|
       vb.memory = "4096"
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
     end
 
     tim_server.vm.provision "shell", path: "win_vm_update_routes.ps1",
