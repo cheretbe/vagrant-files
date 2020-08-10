@@ -1,3 +1,5 @@
+ansible_version = `ansible --version`
+
 Vagrant.configure("2") do |config|
 
   config.vm.define :"vpn-client" do |vpn_client|
@@ -22,6 +24,15 @@ Vagrant.configure("2") do |config|
 
     vpn_client.vm.provision "shell", path: "win_vm_provision.ps1",
       args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+
+    vpn_client.vm.provision "ansible" do |ansible|
+      ansible.playbook = "win_vm_ansible_provision.yml"
+      ansible.compatibility_mode = "2.0"
+      ansible.extra_vars = {
+        "ansible_winrm_scheme": "http",
+        "is_tim_server": false
+      }
+    end
   end
 
   config.vm.define :"client-router" do |client_router|
@@ -87,5 +98,15 @@ Vagrant.configure("2") do |config|
 
     tim_server.vm.provision "shell", path: "win_vm_provision.ps1",
       args: "-intNetIP 192.168.2.10 -routerIP 192.168.2.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+
+    tim_server.vm.provision "ansible" do |ansible|
+      ansible.playbook = "win_vm_ansible_provision.yml"
+      ansible.compatibility_mode = "2.0"
+      ansible.extra_vars = {
+        "ansible_winrm_scheme": "http",
+        "is_tim_server": true
+      }
+    end
+
   end
 end
