@@ -15,13 +15,13 @@ Vagrant.configure("2") do |config|
     end
 
     vpn_client.vm.provision "shell", path: "win_vm_update_routes.ps1",
-      args: "-routerIP 192.168.1.1"
+      args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1"
 
     vpn_client.vm.provision "file", source: "win_vm_update_routes.ps1",
       destination: "c:\\users\\vagrant\\win_vm_update_routes.ps1"
 
     vpn_client.vm.provision "shell", path: "win_vm_provision.ps1",
-      args: "-routerIP 192.168.1.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+      args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
   end
 
   config.vm.define :"client-router" do |client_router|
@@ -80,12 +80,12 @@ Vagrant.configure("2") do |config|
     end
 
     tim_server.vm.provision "shell", path: "win_vm_update_routes.ps1",
-      args: "-routerIP 192.168.2.1"
+      args: "-intNetIP 192.168.2.10 -routerIP 192.168.2.1"
 
     tim_server.vm.provision "file", source: "win_vm_update_routes.ps1",
       destination: "c:\\users\\vagrant\\win_vm_update_routes.ps1"
 
     tim_server.vm.provision "shell", path: "win_vm_provision.ps1",
-      args: "-routerIP 192.168.2.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+      args: "-intNetIP 192.168.2.10 -routerIP 192.168.2.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
   end
 end

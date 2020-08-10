@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param(
+  [string]$intNetIP,
   [string]$routerIP,
   [string]$taskUserPassword = "vagrant"
 )
@@ -29,7 +30,7 @@ $taskAction = New-ScheduledTaskAction `
   -Execute 'C:\Windows\system32\WindowsPowerShell\v1.0\powershell.exe' `
   -Argument (-join @(
     "-NoProfile -NonInteractive -ExecutionPolicy Bypass "
-    ("-File c:\users\vagrant\win_vm_update_routes.ps1 -routerIP {0}" -f $routerIP)
+    ("-File c:\users\vagrant\win_vm_update_routes.ps1 -intNetIP {0} -routerIP {1}" -f $intNetIP, $routerIP)
   ))
 
 Write-Output "Adding scheduled task to fix default route"
