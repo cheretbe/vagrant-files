@@ -2,39 +2,6 @@ ansible_version = `ansible --version`
 
 Vagrant.configure("2") do |config|
 
-  config.vm.define :"vpn-client" do |vpn_client|
-    vpn_client.vm.box = "cheretbe/win10ltsc2019_ru_64"
-    vpn_client.winrm.username = "vagrant"
-    vpn_client.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
-    vpn_client.vm.boot_timeout = 900
-    vpn_client.vm.network "private_network", ip: "192.168.1.10", virtualbox__intnet: "vagrant-vpn-client-lan"
-
-    vpn_client.vm.provider "virtualbox" do |vb|
-      vb.memory = "4096"
-      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
-      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
-    end
-
-    vpn_client.vm.provision "shell", path: "win_vm_update_routes.ps1",
-      args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1"
-
-    vpn_client.vm.provision "file", source: "win_vm_update_routes.ps1",
-      destination: "c:\\users\\vagrant\\win_vm_update_routes.ps1"
-
-    vpn_client.vm.provision "shell", path: "win_vm_provision.ps1",
-      args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
-
-    vpn_client.vm.provision "ansible" do |ansible|
-      ansible.playbook = "win_vm_ansible_provision.yml"
-      ansible.compatibility_mode = "2.0"
-      ansible.extra_vars = {
-        "ansible_winrm_scheme": "http",
-        "is_tim_server": false
-      }
-    end
-  end
-
   config.vm.define :"client-router" do |client_router|
     client_router.vm.box = "cheretbe/routeros-long-term"
     client_router.vm.provider "virtualbox" do |vb|
@@ -87,7 +54,7 @@ Vagrant.configure("2") do |config|
       vb.memory = "4096"
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
-      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-vms"]
     end
 
     tim_server.vm.provision "shell", path: "win_vm_update_routes.ps1",
@@ -107,6 +74,39 @@ Vagrant.configure("2") do |config|
         "is_tim_server": true
       }
     end
-
   end
+
+  config.vm.define :"vpn-client" do |vpn_client|
+    vpn_client.vm.box = "cheretbe/win10ltsc2019_ru_64"
+    vpn_client.winrm.username = "vagrant"
+    vpn_client.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    vpn_client.vm.boot_timeout = 900
+    vpn_client.vm.network "private_network", ip: "192.168.1.10", virtualbox__intnet: "vagrant-vpn-client-lan"
+
+    vpn_client.vm.provider "virtualbox" do |vb|
+      vb.memory = "4096"
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-vms"]
+    end
+
+    vpn_client.vm.provision "shell", path: "win_vm_update_routes.ps1",
+      args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1"
+
+    vpn_client.vm.provision "file", source: "win_vm_update_routes.ps1",
+      destination: "c:\\users\\vagrant\\win_vm_update_routes.ps1"
+
+    vpn_client.vm.provision "shell", path: "win_vm_provision.ps1",
+      args: "-intNetIP 192.168.1.10 -routerIP 192.168.1.1 -taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+
+    vpn_client.vm.provision "ansible" do |ansible|
+      ansible.playbook = "win_vm_ansible_provision.yml"
+      ansible.compatibility_mode = "2.0"
+      ansible.extra_vars = {
+        "ansible_winrm_scheme": "http",
+        "is_tim_server": false
+      }
+    end
+  end
+
 end
