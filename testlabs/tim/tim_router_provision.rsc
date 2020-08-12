@@ -22,6 +22,11 @@
   /ip firewall nat add action=masquerade chain=srcnat src-address=192.168.2.0/24
 }
 
+:if ([:len [/ip firewall nat find action="dst-nat" and to-addresses="192.168.2.10" and dst-port="5555"]] = 0) do={
+  :put "Adding Dst-NAT rule for 192.168.2.10:5555"
+  /ip firewall nat add action=dst-nat chain=dstnat dst-port=5555 in-interface=wan protocol=tcp to-addresses=192.168.2.10
+}
+
 :if ([:len [/ip route find gateway="10.64.0.1"]] = 0) do={
   :put "Adding default route via 10.64.0.1"
   /ip route add distance=1 gateway=10.64.0.1
