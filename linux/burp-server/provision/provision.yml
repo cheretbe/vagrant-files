@@ -1,0 +1,26 @@
+---
+- name: Burp server provision
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Checkout shared playbooks repo
+      git:
+        repo: "https://github.com/cheretbe/ansible-playbooks.git"
+        dest: "/ansible-playbooks"
+
+    - include_role: name="/ansible-playbooks/burp-repo"
+
+    - name: Install burp packages
+      apt:
+        name:  ["burp-core", "burp-server", "burp-client"]
+        update_cache: no
+
+    - name: Add 'burp-client' host config
+      copy:
+        dest: "/etc/burp/clientconfdir/burp-client"
+        owner: burp
+        mode: 0640
+        content: |
+          password = abcdefgh
+          include = /etc/

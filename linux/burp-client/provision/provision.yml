@@ -1,0 +1,22 @@
+---
+- name: Burp server provision
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Checkout shared playbooks repo
+      git:
+        repo: "https://github.com/cheretbe/ansible-playbooks.git"
+        dest: "/ansible-playbooks"
+
+    - include_role: name="/ansible-playbooks/burp-repo"
+
+    - include_role: name="/ansible-playbooks/burp-client"
+      vars:
+        burp_client_server_name: "burp-server"
+
+    - name: Add burp host entry to /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: "172.24.0.10    burp-server"
+        state: present
