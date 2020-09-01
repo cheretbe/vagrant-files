@@ -1,0 +1,36 @@
+ansible_version = `ansible --version`
+
+Vagrant.configure("2") do |config|
+  config.vm.define :internal do |internal|
+    internal.vm.box = "cheretbe/win10ltsc2019_ru_64"
+    internal.winrm.username = "vagrant"
+    internal.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    internal.vm.boot_timeout = 600
+    internal.vm.hostname = "internal"
+    internal.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    end
+  end
+
+  config.vm.define :external do |external|
+    external.vm.box = "cheretbe/win10ltsc2019_ru_64"
+    external.winrm.username = "vagrant"
+    external.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    external.vm.boot_timeout = 600
+    external.vm.hostname = "external"
+    external.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    end
+  end
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "ansible_provision.yml"
+    ansible.compatibility_mode = "2.0"
+    ansible.extra_vars = {
+      "ansible_winrm_scheme": "http"
+    }
+  end
+
+end
