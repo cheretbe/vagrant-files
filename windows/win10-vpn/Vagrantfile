@@ -1,0 +1,57 @@
+require "yaml"
+
+ansible_version = `ansible --version`
+
+vpn_gateway = nil
+bridged_network = nil
+bridged_netmask = nil
+if File.file?("local-config.yml")
+  local_config = YAML.load_file("local-config.yml")
+  unless local_config.nil?
+    vpn_gateway = local_config.fetch("vpn_gateway", vpn_gateway)
+    bridged_network = local_config.fetch("bridged_network", bridged_network)
+    bridged_netmask = local_config.fetch("bridged_netmask", bridged_netmask)
+  end
+end
+
+if vpn_gateway.nil?
+  abort "'vpn_gateway' setting in 'local-config.yml' file is missing. Aborting."
+end
+if bridged_network.nil?
+  abort "'bridged_network' setting in 'local-config.yml' file is missing. Aborting."
+end
+if bridged_netmask.nil?
+  abort "'bridged_netmask' setting in 'local-config.yml' file is missing. Aborting."
+end
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "cheretbe/win10ltsc2019_ru_64"
+  config.winrm.username = "vagrant"
+  config.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+  config.vm.boot_timeout = 900
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+    vb.cpus = "2"
+    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+  end
+
+  config.vm.network "public_network", bridge: "enp0s31f6", type: "dhcp"
+
+    config.vm.provision "shell", path: "setup_vpn.ps1",
+      args: "-vpnGateway #{vpn_gateway} -bridgedNet #{bridged_network} -bridgedNetMask #{bridged_netmask}"
+
+    config.vm.provision "file", source: "setup_vpn.ps1",
+      destination: "c:\\users\\vagrant\\setup_vpn.ps1"
+
+    config.vm.provision "shell", path: "provision.ps1",
+      args: "-taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']} -vpnGateway #{vpn_gateway} -bridgedNet #{bridged_network} -bridgedNetMask #{bridged_netmask}"
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "provision.yml"
+    ansible.extra_vars = {
+      "ansible_winrm_scheme": "http"
+    }
+  end
+end
