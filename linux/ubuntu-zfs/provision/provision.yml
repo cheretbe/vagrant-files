@@ -1,0 +1,16 @@
+---
+- name: ZFS prerequisites provision
+  hosts: all
+  become: yes
+
+# Shared repo checkout and pip packages example:
+# https://github.com/cheretbe/notes/blob/master/vagrant.md#ansible-provision
+  tasks:
+    - name: Show box info
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Install apt packages
+      apt:
+        name: [zfsutils-linux]
+        update_cache: no

@@ -1,0 +1,55 @@
+$hdd_info = [
+  {"vm_name" => :"default", "hdd_name" => "extra_drive.vdi", "hdd_size" => 20480}
+]
+
+class VagrantPlugins::ProviderVirtualBox::Action::SetName
+  alias_method :original_call, :call
+  def call(env)
+    vm_hdd_info = $hdd_info.find { |entry| entry["vm_name"] == env[:machine].name }
+    unless vm_hdd_info.nil?
+      driver = env[:machine].provider.driver
+      vm_uuid = driver.uuid
+      vm_info = driver.execute("showvminfo", vm_uuid, "--machinereadable").split("\n")
+      # We are looking for CfgFile parameter to unquote and extract path from it
+      # CfgFile="/path/to/vm/vm_name.vbox" => /path/to/vm
+      cfg_line = vm_info.find { |line| line.start_with?("CfgFile=") }
+      vm_path = File.dirname(cfg_line.split("=", 2).last.gsub('"', ""))
+      second_hdd_file = File.join(vm_path, vm_hdd_info["hdd_name"])
+      unless File.exist?(second_hdd_file)
+        env[:ui].detail("Creating virtual drive #{second_hdd_file}")
+        driver.execute("createhd", "--filename", second_hdd_file,
+          "--variant", "Standard", "--size", vm_hdd_info["hdd_size"].to_s)
+      end
+      env[:ui].detail("Attaching virtual drive #{second_hdd_file} to the VM")
+      driver.execute("storageattach", vm_uuid, "--storagectl", "SCSI",
+        "--port", "2", "--device", "0", "--type", "hdd",
+        "--medium", second_hdd_file)
+    end
+
+    original_call(env)
+  end
+end
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/bionic64"
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 4096
+    vb.cpus = 2
+    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    # vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
+  end
+
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "provision/provision.yml"
+    ansible.compatibility_mode = "2.0"
+    ansible.extra_vars = {
+      "ansible_python_interpreter": "/usr/bin/python3"
+    }
+  end
+
+  config.vm.provision "shell", name: "Create ZFS filesystem",
+    keep_color: true,
+    inline: <<-SHELL
+      /usr/bin/python3 /vagrant/provision/zfs.py
+    SHELL
+end
