@@ -1,0 +1,80 @@
+---
+- name: Package cache VM provision
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Show box info
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    # Use 'debconf-show apt-cache-ng' or 'debconf-get-selections | grep apt-cache-ng'
+    # to view all available questions
+    - name: Configure APT apt-cache-ng package (Allow HTTP tunnels through Apt-Cacher NG)
+      debconf:
+        name: apt-cache-ng
+        question: "apt-cacher-ng/tunnelenable"
+        value: "true"
+        vtype: boolean
+
+    - name: Install apt packages
+      apt:
+        name: [apt-cacher-ng]
+        update_cache: no
+
+    - name: Add 'apt-cacher-ng' user to 'vboxsf' group
+      user:
+        name: apt-cacher-ng
+        groups: vboxsf
+        append: yes
+
+    - name: Make sure '/media/sf_cache/apt-cacher-ng' directory exists
+      file:
+        path: /media/sf_cache/apt-cacher-ng
+        state: directory
+
+    - name: "Get '/var/cache/apt-cacher-ng' stats"
+      stat:
+        path: "/var/cache/apt-cacher-ng"
+      register: cache_dir_info
+
+    - name: "Remove '/var/cache/apt-cacher-ng' if not a symlink"
+      file:
+        path: /var/cache/apt-cacher-ng
+        state: absent
+      when: cache_dir_info.stat.exists and (not cache_dir_info.stat.islnk)
+
+    - name: Create symbolic link to '/media/sf_cache/apt-cacher-ng'
+      file:
+        src: /media/sf_cache/apt-cacher-ng
+        dest: /var/cache/apt-cacher-ng
+        state: link
+      notify: Restart 'apt-cacher-ng' service
+
+    - name: Make sure drop-in directory for 'apt-cacher-ng' service exists
+      file:
+        path: /etc/systemd/system/apt-cacher-ng.service.d
+        state: directory
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: Create drop-in file for 'apt-cacher-ng' service
+      copy:
+        content: |
+          [Unit]
+          RequiresMountsFor=/media/sf_cache/apt-cacher-ng
+        dest: /etc/systemd/system/apt-cacher-ng.service.d/override.conf
+        mode: 0644
+        owner: root
+        group: root
+      notify: Restart 'apt-cacher-ng' service
+
+
+  handlers:
+    - name: Restart 'apt-cacher-ng' service
+      systemd:
+        name: apt-cacher-ng
+        state: restarted
+        daemon_reload: yes
+      become: true
