@@ -1,0 +1,18 @@
+if Vagrant::Util::Platform.windows?
+  ifInfo = %x("C:/Program Files/Oracle/VirtualBox/VBoxManage.exe" list bridgedifs)
+else
+  ifInfo = %x(VBoxManage list bridgedifs)
+  ifInfo.split("\n").each do |info_line|
+    puts ("==>" + info_line)
+  end
+end
+
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+  config.vm.provider "virtualbox" do |vb|
+    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    # vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
+    vb.memory = "2048"
+  end
+end
