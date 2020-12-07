@@ -2,9 +2,25 @@ if Vagrant::Util::Platform.windows?
   ifInfo = %x("C:/Program Files/Oracle/VirtualBox/VBoxManage.exe" list bridgedifs)
 else
   ifInfo = %x(VBoxManage list bridgedifs)
-  ifInfo.split("\n").each do |info_line|
-    puts ("==>" + info_line)
+end
+parsed_name = ""
+available_bridges = []
+ifInfo.split("\n").each do |info_line|
+  unless info_line.empty?
+    info_name, info_value = info_line.split(":", 2)
+    info_value.strip!
+    if info_name == "Name" then parsed_name = info_value end
+    if (info_name == "Status") and (info_value == "Up") and (not parsed_name.empty?) then
+      available_bridges << parsed_name
+    end
   end
+end
+if available_bridges.length == 0 then
+   abort "ERROR: Couldn't find active bridged network interfaces"
+elsif
+  network_bridge = available_bridges[0]
+else
+  abort "ERROR: More than one active bridged network interface found"
 end
 
 
@@ -15,4 +31,5 @@ Vagrant.configure("2") do |config|
     # vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
     vb.memory = "2048"
   end
+  config.vm.network "public_network", bridge: network_bridge
 end
