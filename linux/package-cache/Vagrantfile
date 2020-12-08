@@ -51,7 +51,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "ansible_local" do |ansible|
     # ansible.install_mode = :pip
-    ansible.playbook = "provision/provision.yml"
+    ansible.playbook = "provision/provision_apt-cache-ng.yml"
     ansible.compatibility_mode = "2.0"
     ansible.extra_vars = {
       "ansible_python_interpreter": "/usr/bin/python3"

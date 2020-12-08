@@ -1,5 +1,5 @@
 ---
-- name: Package cache VM provision
+- name: apt-cache-ng provision
   hosts: all
   become: yes
 
