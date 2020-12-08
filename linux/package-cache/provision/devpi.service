@@ -1,0 +1,17 @@
+[Unit]
+Description=Devpi Server
+Requires=network-online.target
+After=network-online.target
+RequiresMountsFor=/media/sf_cache/devpi
+
+[Service]
+Restart=on-success
+# ExecStart:
+# - shall point to existing devpi-server executable
+# - shall not use the deprecated `--start`. We want the devpi-server to start in foreground
+ExecStart=/usr/local/bin/devpi-server --serverdir /media/sf_cache/devpi --host 0.0.0.0
+# set User according to user which is able to run the devpi-server
+User=vagrant
+
+[Install]
+WantedBy=multi-user.target
