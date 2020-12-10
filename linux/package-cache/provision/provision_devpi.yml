@@ -17,16 +17,12 @@
       become: true
 
     - name: Init devpi config for user vagrant
-      # command: su - vagrant -c "devpi-init"
-      command: devpi-init --serverdir /media/sf_cache/devpi
-      become_user: vagrant
+      # become_user is not enough, we need su with a login shell to
+      # apply vboxsf group asignment
+      command: su -l - vagrant -c "devpi-init --serverdir /media/sf_cache/devpi"
+      # become_user: vagrant 
       args:
         creates: /media/sf_cache/devpi
-
-    - name: Make sure '/media/sf_cache/devpi' directory exists
-      file:
-        path: /media/sf_cache/devpi
-        state: directory
 
     - name: Copy devpi service unit file
       copy:
@@ -36,17 +32,6 @@
         group: root
       notify:
         - Start 'devpi' service
-
-  #   - name: Create drop-in file for 'apt-cacher-ng' service
-  #     copy:
-  #       content: |
-  #         [Unit]
-  #         RequiresMountsFor=/media/sf_cache/apt-cacher-ng
-  #       dest: /etc/systemd/system/apt-cacher-ng.service.d/override.conf
-  #       mode: 0644
-  #       owner: root
-  #       group: root
-  #     notify: Restart 'apt-cacher-ng' service
 
 
   handlers:
