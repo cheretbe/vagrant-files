@@ -1,3 +1,7 @@
+if not ENV.has_key?('AO_DEFAULT_VAGRANT_PASSWORD')
+  abort "This Vagrantfile needs AO_DEFAULT_VAGRANT_PASSWORD environment variable to be defined. Aborting"
+end
+
 Vagrant.configure("2") do |config|
   config.vm.define "win10" do |win10|
     win10.vm.box = "cheretbe/win10ltsc2019_ru_64"
@@ -16,22 +20,14 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define :"ansible-controller" do |ansible_controller|
-    ansible_controller.vm.box = "ubuntu/focal64"
+    ansible_controller.vm.box = "cheretbe/ansible-controller"
     ansible_controller.vm.hostname = "ansible-controller"
     ansible_controller.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
     ansible_controller.vm.network "private_network", ip: "172.24.0.10", virtualbox__intnet: "vagrant-intnet"
-    ansible_controller.vm.provision "shell",
-      keep_color: true,
-      inline: <<-SHELL
-        set -euo pipefail
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update
-        apt-get -yq install ansible
-        ansible-galaxy collection install community.windows
-      SHELL
       ansible_controller.vm.provision "ansible_local" do |ansible|
+        ansible.compatibility_mode = "2.0"
         ansible.install = false
         ansible.playbook = "provision.yml"
         ansible.extra_vars = {
