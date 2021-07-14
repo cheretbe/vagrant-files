@@ -1,0 +1,43 @@
+---
+
+- name: Ubuntu box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - include_role: name="/ansible-playbooks/burp-repo"
+
+    - name: Install burp-server package
+      apt:
+        name: burp-server
+      become: yes
+
+    - name: Create Burp server config
+      ansible.builtin.template:
+        src: templates/burp-server.conf
+        dest: /etc/burp/burp-server.conf
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      become: yes
+      notify: Restart burp-server service
+
+    - name: Create Burp config for Win10
+      ansible.builtin.template:
+        src: templates/win10_client_conf
+        dest: /etc/burp/clientconfdir/win10
+        owner: burp
+        group: root
+        mode: '0640'
+      become: yes
+
+  handlers:
+    - name: Restart burp-server service
+      ansible.builtin.service:
+        name: burp-server
+        state: restarted
+      become: yes

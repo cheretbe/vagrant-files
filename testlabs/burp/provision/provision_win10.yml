@@ -1,0 +1,60 @@
+---
+
+- name: Windows box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Add firewall rule to allow ICMP from anywhere
+      community.windows.win_firewall_rule:
+        name: _vagrant_ICMP
+        action: allow
+        direction: in
+        protocol: icmpv4
+        icmp_type_code: '*'
+        state: present
+        enabled: yes
+
+    - name: Get Burp executable information
+      ansible.windows.win_stat:
+        path: "c:\\Program Files\\Burp\\bin\\burp.exe"
+      register: burp_exe_info
+
+    - name: Install Burp
+      block:
+
+        - name: Create temporary download directory
+          ansible.windows.win_tempfile:
+            state: directory
+            prefix: ansible.burp.
+          register: temp_dir
+
+        - name: Set Burp version
+          set_fact:
+            burp_version: "2.4.0"
+
+        - name: Download Burp installer
+          ansible.windows.win_get_url:
+            url: "https://github.com/grke/burp/releases/download/{{ burp_version }}/burp-win64-installer-{{ burp_version }}.exe"
+            dest: "{{ temp_dir.path }}\\burp-win64-installer-{{ burp_version }}.exe"
+
+        - name: Run Burp installer
+          ansible.windows.win_command: "burp-win64-installer-{{ burp_version }}.exe /S"
+          args:
+            chdir: "{{ temp_dir.path }}"
+
+      when: not burp_exe_info.stat.exists
+      always:
+        - name: Remove temp directory
+          ansible.windows.win_file:
+            path: "{{ temp_dir.path }}"
+            state: absent
+          when: temp_dir is defined
+
+    - name: Write Burp config file
+      ansible.windows.win_template:
+        src: templates/win10_burp.conf
+        dest: "c:\\Program Files\\Burp\\burp.conf"
