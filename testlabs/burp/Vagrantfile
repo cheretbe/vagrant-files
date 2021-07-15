@@ -74,7 +74,7 @@ Vagrant.configure("2") do |config|
 
     ansible_controller.vm.network "private_network", ip: "172.24.0.10", virtualbox__intnet: "vagrant-intnet"
 
-    burp_server.vm.synced_folder Dir.home, "/host_home"
+    ansible_controller.vm.synced_folder Dir.home, "/host_home"
 
     ansible_controller.vm.provision "ansible_local" do |ansible|
       ansible.compatibility_mode = "2.0"
