@@ -1,7 +1,5 @@
 require "yaml"
 
-ansible_version = `ansible --version`
-
 vpn_gateway = nil
 bridged_network = nil
 bridged_netmask = nil
@@ -25,33 +23,55 @@ if bridged_netmask.nil?
 end
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "cheretbe/win10ltsc2019_ru_64"
-  config.winrm.username = "vagrant"
-  config.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
-  config.vm.boot_timeout = 900
+  config.vm.define "win10" do |win10|
+    win10.vm.box = "cheretbe/win10ltsc2019_ru_64"
+    win10.winrm.username = "vagrant"
+    win10.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    win10.vm.boot_timeout = 900
 
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = "4096"
-    vb.cpus = "2"
-    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-    vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
-  end
+    win10.vm.provider "virtualbox" do |vb|
+      vb.memory = "4096"
+      vb.cpus = "2"
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    end
 
-  config.vm.network "public_network", bridge: "enp0s31f6", type: "dhcp"
+    win10.vm.network "public_network", bridge: "enp0s31f6", type: "dhcp"
 
-    config.vm.provision "shell", path: "setup_vpn.ps1",
+    win10.vm.provision "shell", path: "setup_vpn.ps1",
       args: "-vpnGateway #{vpn_gateway} -bridgedNet #{bridged_network} -bridgedNetMask #{bridged_netmask}"
 
-    config.vm.provision "file", source: "setup_vpn.ps1",
+    win10.vm.provision "file", source: "setup_vpn.ps1",
       destination: "c:\\users\\vagrant\\setup_vpn.ps1"
 
-    config.vm.provision "shell", path: "provision.ps1",
+    win10.vm.provision "shell", path: "provision.ps1",
       args: "-taskUserPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']} -vpnGateway #{vpn_gateway} -bridgedNet #{bridged_network} -bridgedNetMask #{bridged_netmask}"
 
-  config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "provision.yml"
-    ansible.extra_vars = {
-      "ansible_winrm_scheme": "http"
-    }
+    # win10.vm.provision "ansible" do |ansible|
+    #   ansible.playbook = "provision.yml"
+    #   ansible.extra_vars = {
+    #     "ansible_winrm_scheme": "http"
+    #   }
+    # end
+    win10.vm.network "private_network", ip: "172.24.0.21", virtualbox__intnet: "vagrant-intnet"
+  end
+
+  config.vm.define :"ansible-controller" do |ansible_controller|
+    ansible_controller.vm.box = "cheretbe/ansible-controller"
+    ansible_controller.vm.hostname = "ansible-controller"
+    ansible_controller.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    ansible_controller.vm.network "private_network", ip: "172.24.0.20", virtualbox__intnet: "vagrant-intnet"
+      ansible_controller.vm.provision "ansible_local" do |ansible|
+        ansible.compatibility_mode = "2.0"
+        ansible.install = false
+        ansible.playbook = "provision.yml"
+        ansible.extra_vars = {
+          ansible_password: "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}",
+        }
+        ansible.inventory_path = "inventory.yml"
+        ansible.limit = "win10"
+      end
   end
 end
