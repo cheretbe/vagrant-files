@@ -7,6 +7,14 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
+    - name: Install apt packages
+      apt:
+        name: ["iptables-persistent", "netfilter-persistent"]
+        # update_cache: yes
+        # # 1 hour
+        # cache_valid_time: 3600
+      become: yes
+
     - name: Enable IPv4 forwarding
       ansible.posix.sysctl:
         name: net.ipv4.ip_forward
@@ -14,4 +22,22 @@
         sysctl_set: yes
         state: present
         reload: yes
+      become: yes
+
+    - name: iptables - NAT client connections
+      ansible.builtin.iptables:
+        table: nat
+        chain: POSTROUTING
+        source: 192.168.79.0/24
+        out_interface: enp0s8
+        jump: MASQUERADE
+        comment: NAT client connections
+      become: yes
+      notify: Save iptables state
+
+  handlers:
+    - name: Save iptables state
+      community.general.iptables_state:
+        state: saved
+        path: /etc/iptables/rules.v4
       become: yes
