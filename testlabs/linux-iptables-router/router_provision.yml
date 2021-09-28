@@ -24,12 +24,18 @@
         reload: yes
       become: yes
 
+    - name: Get WAN interface name
+      set_fact:
+        wan_if_name: "{{ item }}"
+      loop: "{{ ansible_interfaces }}"
+      when: "lookup('vars', 'ansible_' + item).ipv4['address'] == wan_if_ipv4"
+
     - name: iptables - NAT client connections
       ansible.builtin.iptables:
         table: nat
         chain: POSTROUTING
         source: 192.168.79.0/24
-        out_interface: enp0s8
+        out_interface: "{{ wan_if_name }}"
         jump: MASQUERADE
         comment: NAT client connections
       become: yes
