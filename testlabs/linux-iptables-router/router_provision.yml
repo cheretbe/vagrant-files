@@ -106,6 +106,16 @@
       become: yes
       notify: Save iptables state
 
+    - name: iptables - Allow ICMP (INPUT)
+      ansible.builtin.iptables:
+        table: filter
+        chain: INPUT
+        protocol: icmp
+        jump: ACCEPT
+        comment: Allow ICMP
+      become: yes
+      notify: Save iptables state
+
     - name: iptables - Allow LAN connections (INPUT)
       ansible.builtin.iptables:
         table: filter
