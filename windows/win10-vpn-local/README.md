@@ -1,5 +1,7 @@
 `local-config.yml` example:
 ```yaml
 ---
-vpn_country: nl
+purevpn_server: pl2-ovpn.pointtoserver.com
+purevpn_user: username
+purevpn_password: password
 ```

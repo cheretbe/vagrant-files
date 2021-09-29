@@ -7,9 +7,6 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    - name: Debug
-      meta: end_play
-
     - name: Make sure '/etc/systemd/resolved.conf.d' directory exists
       file:
         path: /etc/systemd/resolved.conf.d
@@ -48,10 +45,10 @@
 
     - name: Install apt packages
       apt:
-        name: ["iptables-persistent", "netfilter-persistent", "dnsmasq"]
-        # update_cache: yes
+        name: ["iptables-persistent", "netfilter-persistent", "dnsmasq", "openvpn"]
+        update_cache: yes
         # # 1 hour
-        # cache_valid_time: 3600
+        cache_valid_time: 3600
       become: yes
 
     - name: Enable IPv4 forwarding
@@ -62,6 +59,38 @@
         state: present
         reload: yes
       become: yes
+
+    - name: Create Purevpn OpenVPN config
+      ansible.builtin.template:
+        src: purevpn.conf.j2
+        dest: /etc/openvpn/client/purevpn.conf
+        owner: root
+        group: root
+        mode: '0644'
+      become: yes
+
+    - name: Create Purevpn user credentials file
+      ansible.builtin.copy:
+        content: |-
+          {{ purevpn_user }}
+          {{ purevpn_password }}
+        dest: /etc/openvpn/client/purevpn_credentials
+        owner: root
+        group: root
+        mode: '0600'
+      become: yes
+
+    - name: Copy resolv.conf update script
+      ansible.builtin.copy:
+        src: update_resolve_conf.py
+        dest: /etc/openvpn/client/update_resolve_conf.py
+        owner: root
+        group: root
+        mode: '0755'
+      become: yes
+
+    - name: Debug
+      meta: end_play
 
     - name: Get WAN interface name
       set_fact:
