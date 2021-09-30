@@ -2,6 +2,11 @@
 
 import sys
 import os
+import shutil
+
+# Why is this script needed:
+# https://github.com/cheretbe/notes/blob/master/openvpn.md#dns
+# TODO: Consider moving this script to https://github.com/cheretbe/bootstrap
 
 if not os.environ.get("dev", None):
     sys.exit(0)
@@ -9,22 +14,31 @@ script_type = os.environ.get("script_type", None)
 if not script_type:
     sys.exit(0)
 
-# https://stackoverflow.com/questions/4847615/copying-a-symbolic-link-in-python
 def copy_as_link(src, dst):
+    print(f"Copying '{src}' ==> '{dst}'")
+    if os.path.lexists(dst):
+        os.unlink(dst)
     if os.path.islink(src):
-        os.symlink()
+        os.symlink(os.readlink(src), dst)
+    else:
+        shutil.copy(src, dst)
 
 if script_type == "up":
-    vpn_resolv_conf = ""
+    vpn_dns_servers = []
 
     for env_var in os.environ:
         if env_var.startswith("foreign_option_"):
             value_parts = os.environ[env_var].split(" ")
             if len(value_parts) == 3 and value_parts[0] == "dhcp-option" and value_parts[1] == "DNS":
-                vpn_resolv_conf += "nameserver " + value_parts[2] + "\n"
-    if vpn_resolv_conf:
-        print(vpn_resolv_conf)
+                vpn_dns_servers += [value_parts[2]]
+    if len(vpn_dns_servers) > 0:
+        copy_as_link("/etc/resolv.conf", "/run/vpn_resolv_conf.backup")
+        print(f"Updating /etc/resolv.conf to use the following DNS server(s): {vpn_dns_servers}")
+        os.unlink("/etc/resolv.conf")
+        with open("/etc/resolv.conf", "w") as resolv_f:
+            for dns_srv in vpn_dns_servers:
+                resolv_f.write(f"nameserver {dns_srv}\n")
 elif script_type == "down":
-    print("==> down")
-
-# print(sys.argv)
+    if os.path.isfile("/run/vpn_resolv_conf.backup"):
+        copy_as_link("/run/vpn_resolv_conf.backup", "/etc/resolv.conf")
+        os.unlink("/run/vpn_resolv_conf.backup")
