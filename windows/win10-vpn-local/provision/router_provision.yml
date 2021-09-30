@@ -89,118 +89,118 @@
         mode: '0755'
       become: yes
 
-    - name: Debug
-      meta: end_play
+    # - name: Debug
+    #   meta: end_play
 
-    - name: Get WAN interface name
+    - name: Get LAN interface name
       set_fact:
         lan_if_name: "{{ item }}"
       loop: "{{ ansible_interfaces }}"
       when: "lookup('vars', 'ansible_' + item).ipv4['address'] == lan_if_ipv4"
 
-    - name: Get WAN interface name
-      set_fact:
-        wan_if_name: "{{ item }}"
-      loop: "{{ ansible_interfaces }}"
-      when: "lookup('vars', 'ansible_' + item).ipv4['address'] == wan_if_ipv4"
+    # - name: Get WAN interface name
+    #   set_fact:
+    #     wan_if_name: "{{ item }}"
+    #   loop: "{{ ansible_interfaces }}"
+    #   when: "lookup('vars', 'ansible_' + item).ipv4['address'] == wan_if_ipv4"
 
     - name: iptables - NAT client connections
       ansible.builtin.iptables:
         table: nat
         chain: POSTROUTING
-        source: 192.168.79.0/24
-        out_interface: "{{ wan_if_name }}"
+        source: 192.168.80.0/24
+        out_interface: tun0
         jump: MASQUERADE
         comment: NAT client connections
       become: yes
       notify: Save iptables state
 
-    - name: iptables - Allow SSH from non-WAN interfaces
-      ansible.builtin.iptables:
-        table: filter
-        chain: INPUT
-        protocol: tcp
-        destination_port: 22
-        # Note the '!'
-        in_interface: "!{{ wan_if_name }}"
-        jump: ACCEPT
-        comment: Allow SSH from non-WAN interfaces
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow SSH from non-WAN interfaces
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: INPUT
+    #     protocol: tcp
+    #     destination_port: 22
+    #     # Note the '!'
+    #     in_interface: "!{{ wan_if_name }}"
+    #     jump: ACCEPT
+    #     comment: Allow SSH from non-WAN interfaces
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Allow loopback connections
-      ansible.builtin.iptables:
-        table: filter
-        chain: INPUT
-        in_interface: lo
-        jump: ACCEPT
-        comment: Allow loopback connections
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow loopback connections
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: INPUT
+    #     in_interface: lo
+    #     jump: ACCEPT
+    #     comment: Allow loopback connections
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Allow ICMP (INPUT)
-      ansible.builtin.iptables:
-        table: filter
-        chain: INPUT
-        protocol: icmp
-        jump: ACCEPT
-        comment: Allow ICMP
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow ICMP (INPUT)
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: INPUT
+    #     protocol: icmp
+    #     jump: ACCEPT
+    #     comment: Allow ICMP
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Allow LAN connections (INPUT)
-      ansible.builtin.iptables:
-        table: filter
-        chain: INPUT
-        in_interface: "{{ lan_if_name }}"
-        jump: ACCEPT
-        comment: Allow loopback connections
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow LAN connections (INPUT)
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: INPUT
+    #     in_interface: "{{ lan_if_name }}"
+    #     jump: ACCEPT
+    #     comment: Allow loopback connections
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Allow LAN connections (FORWARD)
-      ansible.builtin.iptables:
-        table: filter
-        chain: FORWARD
-        in_interface: "{{ lan_if_name }}"
-        jump: ACCEPT
-        comment: Allow loopback connections
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow LAN connections (FORWARD)
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: FORWARD
+    #     in_interface: "{{ lan_if_name }}"
+    #     jump: ACCEPT
+    #     comment: Allow loopback connections
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Allow established and related connections (INPUT)
-      ansible.builtin.iptables:
-        table: filter
-        chain: INPUT
-        ctstate: ESTABLISHED,RELATED
-        jump: ACCEPT
-        comment: Allow established and related connections
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow established and related connections (INPUT)
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: INPUT
+    #     ctstate: ESTABLISHED,RELATED
+    #     jump: ACCEPT
+    #     comment: Allow established and related connections
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Allow established and related connections (FORWARD)
-      ansible.builtin.iptables:
-        table: filter
-        chain: FORWARD
-        ctstate: ESTABLISHED,RELATED
-        jump: ACCEPT
-        comment: Allow established and related connections
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Allow established and related connections (FORWARD)
+    #   ansible.builtin.iptables:
+    #     table: filter
+    #     chain: FORWARD
+    #     ctstate: ESTABLISHED,RELATED
+    #     jump: ACCEPT
+    #     comment: Allow established and related connections
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Set the policy for the INPUT chain to DROP
-      ansible.builtin.iptables:
-        chain: INPUT
-        policy: DROP
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Set the policy for the INPUT chain to DROP
+    #   ansible.builtin.iptables:
+    #     chain: INPUT
+    #     policy: DROP
+    #   become: yes
+    #   notify: Save iptables state
 
-    - name: iptables - Set the policy for the FORWARD chain to DROP
-      ansible.builtin.iptables:
-        chain: FORWARD
-        policy: DROP
-      become: yes
-      notify: Save iptables state
+    # - name: iptables - Set the policy for the FORWARD chain to DROP
+    #   ansible.builtin.iptables:
+    #     chain: FORWARD
+    #     policy: DROP
+    #   become: yes
+    #   notify: Save iptables state
 
   handlers:
     - name: Save iptables state
