@@ -14,7 +14,7 @@ param(
   $dnsServerIP
 )
   if (Compare-Object (Get-DnsClientServerAddress -InterfaceIndex $ifIndex -AddressFamily IPv4).ServerAddresses @($dnsServerIP)) {
-    Write-Output ("  Setting DNS server to '{0}'' on interface {1}" -f $dnsServerIP, $ifIndex)
+    Write-Output ("  Setting DNS server to '{0}' on interface {1}" -f $dnsServerIP, $ifIndex)
     Set-DnsClientServerAddress -InterfaceIndex $ifIndex -ServerAddresses @($dnsServerIP)
   } #if
 }
@@ -33,7 +33,9 @@ param(
       } #if
     } # ForEach-Object
 
-  CheckDNSServer -ifIndex $natInterfaceIdx -dnsServerIP ""
+  # There is no way to receive IP/mask only without specifying at least one
+  # DNS server entry (setting it to an empty list just doesn't change anything)
+  CheckDNSServer -ifIndex $natInterfaceIdx -dnsServerIP $vpnGateway
   CheckDNSServer -ifIndex $vpnInterfaceIdx -dnsServerIP $vpnGateway
 
   Get-NetRoute -AddressFamily IPv4 | ForEach-Object {
