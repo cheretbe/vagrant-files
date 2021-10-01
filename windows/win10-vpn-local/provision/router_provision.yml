@@ -54,7 +54,10 @@
 
     - name: Install apt packages
       apt:
-        name: ["iptables-persistent", "netfilter-persistent", "dnsmasq", "openvpn"]
+        name: [
+          "iptables-persistent", "netfilter-persistent", "dnsmasq", "openvpn",
+          "net-tools"
+        ]
         update_cache: yes
         # # 1 hour
         cache_valid_time: 3600
