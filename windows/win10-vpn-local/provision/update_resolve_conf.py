@@ -3,6 +3,7 @@
 import sys
 import os
 import shutil
+import subprocess
 
 # Why is this script needed:
 # https://github.com/cheretbe/notes/blob/master/openvpn.md#dns
@@ -38,7 +39,10 @@ if script_type == "up":
         with open("/etc/resolv.conf", "w") as resolv_f:
             for dns_srv in vpn_dns_servers:
                 resolv_f.write(f"nameserver {dns_srv}\n")
+        subprocess.check_call(["/usr/bin/systemctl", "restart", "dnsmasq.service"])
+
 elif script_type == "down":
     if os.path.isfile("/run/vpn_resolv_conf.backup"):
         copy_as_link("/run/vpn_resolv_conf.backup", "/etc/resolv.conf")
         os.unlink("/run/vpn_resolv_conf.backup")
+        subprocess.check_call(["/usr/bin/systemctl", "restart", "dnsmasq.service"])

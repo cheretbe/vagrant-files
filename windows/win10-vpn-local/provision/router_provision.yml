@@ -28,11 +28,20 @@
       become: true
       register: systemd_resolved_stub_info
 
+    - name: Get information on '/etc/resolv.conf' file
+      ansible.builtin.stat:
+        path: /etc/resolv.conf
+      register: resolv_conf_info
+
     - name: "Update '/etc/resolv.conf' symlink"
       file:
         src: "/run/systemd/resolve/resolv.conf"
         dest: "/etc/resolv.conf"
         state: link
+      when: >-
+        resolv_conf_info.stat.islnk
+        and
+        resolv_conf_info.stat.lnk_source == "/run/systemd/resolve/stub-resolv.conf"
       become: true
 
       # Notification handler won't do: we need working DNS during dnsmasq installation
@@ -68,6 +77,7 @@
         group: root
         mode: '0644'
       become: yes
+      notify: Restart 'openvpn-client@purevpn' service
 
     - name: Create Purevpn user credentials file
       ansible.builtin.copy:
@@ -79,6 +89,7 @@
         group: root
         mode: '0600'
       become: yes
+      notify: Restart 'openvpn-client@purevpn' service
 
     - name: Copy resolv.conf update script
       ansible.builtin.copy:
@@ -89,8 +100,12 @@
         mode: '0755'
       become: yes
 
-    # - name: Debug
-    #   meta: end_play
+    - name: Enable and start 'openvpn-client@purevpn' service
+      ansible.builtin.systemd:
+        name: openvpn-client@purevpn.service
+        state: started
+        enabled: yes
+      become: yes
 
     - name: Get LAN interface name
       set_fact:
@@ -207,4 +222,10 @@
       community.general.iptables_state:
         state: saved
         path: /etc/iptables/rules.v4
+      become: yes
+
+    - name: Restart 'openvpn-client@purevpn' service
+      ansible.builtin.systemd:
+        name: openvpn-client@purevpn.service
+        state: restarted
       become: yes

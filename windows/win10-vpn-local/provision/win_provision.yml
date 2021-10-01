@@ -8,13 +8,13 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    # - name: install Google Chrome browser
-    #   win_chocolatey:
-    #     name: googlechrome
-    #     state: present
-    #     ignore_checksums: yes
+    - name: install Google Chrome browser
+      win_chocolatey:
+        name: googlechrome
+        state: present
+        ignore_checksums: yes
 
-    # - name: install Mozilla Firefox browser
-    #   win_chocolatey:
-    #     name: firefox
-    #     state: present
+    - name: install Mozilla Firefox browser
+      win_chocolatey:
+        name: firefox
+        state: present
