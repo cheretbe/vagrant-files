@@ -52,10 +52,23 @@
       become: true
       when: systemd_resolved_stub_info.changed
 
+    - name: Add Speedtest repository key
+      apt_key:
+        url: https://packagecloud.io/ookla/speedtest-cli/gpgkey
+        state: present
+      become: yes
+
+    - name: Add Speedtest repository
+      apt_repository:
+        repo: deb https://packagecloud.io/ookla/speedtest-cli/ubuntu/ {{ ansible_distribution_release }} main
+        state: present
+      become: yes
+
     - name: Install apt packages
       apt:
         name: [
-          "iptables-persistent", "netfilter-persistent", "dnsmasq", "openvpn"
+          "iptables-persistent", "netfilter-persistent", "dnsmasq", "openvpn",
+          "speedtest"
         ]
         update_cache: yes
         # # 1 hour
