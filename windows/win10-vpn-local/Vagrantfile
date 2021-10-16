@@ -5,12 +5,14 @@ if not ENV.has_key?('AO_DEFAULT_VAGRANT_PASSWORD')
 end
 
 purevpn_server = "nl2-ovpn-udp.pointtoserver.com"
+purevpn_protocol = "udp"
 purevpn_user = nil
 purevpn_password = nil
 if File.file?("local-config.yml")
   local_config = YAML.load_file("local-config.yml")
   unless local_config.nil?
     purevpn_server = local_config.fetch("purevpn_server", purevpn_server)
+    purevpn_protocol = local_config.fetch("purevpn_protocol", purevpn_protocol)
     purevpn_user = local_config.fetch("purevpn_user", purevpn_user)
     purevpn_password = local_config.fetch("purevpn_password", purevpn_password)
   end
@@ -87,6 +89,7 @@ Vagrant.configure("2") do |config|
       ansible.limit = "router"
       ansible.extra_vars = {
         purevpn_server:   purevpn_server,
+        purevpn_protocol: purevpn_protocol,
         purevpn_user:     purevpn_user,
         purevpn_password: purevpn_password,
         lan_if_ipv4: "192.168.80.11",

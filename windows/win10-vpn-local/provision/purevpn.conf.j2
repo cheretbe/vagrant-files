@@ -1,8 +1,14 @@
 client
+
+{% if purevpn_protocol == 'udp' %}
 explicit-exit-notify
 proto udp
-;remote nl2-ovpn-udp.pointtoserver.com 53
 remote {{ purevpn_server }} 53
+{% else %}
+proto tcp
+remote {{ purevpn_server }} 80
+{% endif %}
+
 dev tun
 auth-user-pass /etc/openvpn/client/purevpn_credentials
 persist-key
