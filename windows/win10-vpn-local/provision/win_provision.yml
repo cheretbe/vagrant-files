@@ -8,13 +8,69 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    - name: install Google Chrome browser
+    - name: Install PowerShell modules
+      community.windows.win_psmodule:
+        name: "{{ item.name }}"
+        state: present
+        allow_clobber: "{{ item.allow_clobber | default(false) }}"
+      loop:
+        - {"name": "nuget"}
+        - {"name": "Pscx", allow_clobber: yes}
+
+    - name: Install Google Chrome browser
       win_chocolatey:
         name: googlechrome
         state: present
         ignore_checksums: yes
 
-    - name: install Mozilla Firefox browser
+    - name: Add 'uBlock Origin' extension to Google Chrome
+      win_regedit:
+        path: HKLM:\SOFTWARE\WOW6432Node\Google\Chrome\Extensions\cjpalhdlnbpafiamejdnhcphjbkeiagm
+        name: update_url
+        data: https://clients2.google.com/service/update2/crx
+
+    - name: Install Mozilla Firefox browser
       win_chocolatey:
         name: firefox
         state: present
+
+    - name: Download DNS leak test script
+      ansible.windows.win_get_url:
+        url: "https://raw.githubusercontent.com/macvk/dnsleaktest/master/dnsleaktest.bat"
+        dest: C:\users\vagrant\dnsleaktest.bat
+
+    - name: Create IP info script
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+
+          ECHO Querying https://freegeoip.app...
+          powershell "Invoke-RestMethod https://freegeoip.app/json"
+
+          ECHO Performing DNS leak test...
+          CALL C:\Users\vagrant\dnsleaktest.bat
+
+          ECHO Press any key to continue...
+          PAUSE >NUL
+        dest: "c:\\Users\\vagrant\\Desktop\\Get IP Info.bat"
+
+    - name: Download Ookla Speedtest CLI archive
+      ansible.windows.win_get_url:
+        url: https://install.speedtest.net/app/cli/ookla-speedtest-1.0.0-win64.zip
+        dest: C:\Users\vagrant\Downloads\ookla-speedtest-1.0.0-win64.zip
+
+    - name: Extract Ookla Speedtest CLI archive
+      community.windows.win_unzip:
+        src: C:\Users\vagrant\Downloads\ookla-speedtest-1.0.0-win64.zip
+        dest: C:\Users\vagrant
+
+    - name: Create Speedtest wrapper script
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+
+          C:\Users\vagrant\speedtest.exe
+
+          ECHO Press any key to continue...
+          PAUSE >NUL
+        dest: "c:\\Users\\vagrant\\Desktop\\Speedtest.bat"
