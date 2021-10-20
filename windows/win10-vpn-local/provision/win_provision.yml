@@ -74,3 +74,36 @@
           ECHO Press any key to continue...
           PAUSE >NUL
         dest: "c:\\Users\\vagrant\\Desktop\\Speedtest.bat"
+
+    - name: Create a script to ping 8.8.8.8 on the Desktop
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+          ping -t 8.8.8.8
+        dest: "c:\\Users\\vagrant\\Desktop\\ping 8.8.8.8.bat"
+
+    - name: Create startup script to ping 8.8.8.8
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+          ping -t 8.8.8.8
+        dest: "C:\\Users\\vagrant\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\ping 8.8.8.8.bat"
+
+    - name: Download plink.exe
+      ansible.windows.win_get_url:
+        url: https://the.earth.li/~sgtatham/putty/latest/w64/plink.exe
+        dest: C:\Users\vagrant\plink.exe
+
+    - name: Create a script to view openvpn client log
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+          c:\Users\vagrant\plink.exe -batch vagrant@192.168.80.11 -i c:\vagrant\temp\vagrant_private_key.ppk "sudo journalctl -u openvpn-client@purevpn.service -f"
+        dest: "c:\\Users\\vagrant\\Desktop\\OpenVPN client log.bat"
+
+    - name: Create a script to restart openvpn client
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+          c:\Users\vagrant\plink.exe -batch vagrant@192.168.80.11 -i c:\vagrant\temp\vagrant_private_key.ppk "sudo service openvpn-client@purevpn restart"
+        dest: "c:\\Users\\vagrant\\Desktop\\Restart OpenVPN client.bat"

@@ -68,12 +68,20 @@
       apt:
         name: [
           "iptables-persistent", "netfilter-persistent", "dnsmasq", "openvpn",
-          "speedtest"
+          "putty-tools", "speedtest"
         ]
         update_cache: yes
         # # 1 hour
         cache_valid_time: 3600
       become: yes
+
+    - name: Convert vagrant user private key file to PPK format
+      ansible.builtin.command:
+        cmd: >-
+          puttygen
+          /vagrant/.vagrant/machines/router/virtualbox/private_key
+          -o /vagrant/temp/vagrant_private_key.ppk
+        creates: /vagrant/temp/vagrant_private_key.ppk
 
     - name: Enable IPv4 forwarding
       ansible.posix.sysctl:
