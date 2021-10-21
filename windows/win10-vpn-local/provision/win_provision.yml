@@ -82,6 +82,13 @@
           ping -t 8.8.8.8
         dest: "c:\\Users\\vagrant\\Desktop\\ping 8.8.8.8.bat"
 
+    - name: Create a script to ping 8.8.8.8 from the router on the Desktop
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+          c:\Users\vagrant\plink.exe -batch vagrant@192.168.80.11 -i c:\vagrant\temp\vagrant_private_key.ppk "ping 8.8.8.8"
+        dest: "c:\\Users\\vagrant\\Desktop\\ping from the router.bat"
+
     - name: Create startup script to ping 8.8.8.8
       ansible.windows.win_copy:
         content: |
