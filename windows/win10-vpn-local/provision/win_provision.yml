@@ -107,3 +107,27 @@
           @ECHO OFF
           c:\Users\vagrant\plink.exe -batch vagrant@192.168.80.11 -i c:\vagrant\temp\vagrant_private_key.ppk "sudo service openvpn-client@purevpn restart"
         dest: "c:\\Users\\vagrant\\Desktop\\Restart OpenVPN client.bat"
+
+    - name: Create a script to fix default route
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+
+          route print -4
+          powershell -noprofile -command "&{ start-process powershell -ArgumentList @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', 'c:\users\vagrant\win_setup_vpn.ps1', '-vpnGateway', '192.168.80.11') -verb RunAs}"
+          route print -4
+
+          ECHO Press any key to continue...
+          PAUSE >NUL
+        dest: "c:\\Users\\vagrant\\Desktop\\Fix default route.bat"
+
+    - name: Create a script to init plink PPK key
+      ansible.windows.win_copy:
+        content: |
+          @ECHO OFF
+
+          c:\Users\vagrant\plink.exe vagrant@192.168.80.11 -i c:\vagrant\temp\vagrant_private_key.ppk "uname -a"
+
+          ECHO Press any key to continue...
+          PAUSE >NUL
+        dest: "c:\\Users\\vagrant\\Desktop\\Init SSH key.bat"
