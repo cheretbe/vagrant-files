@@ -1,0 +1,76 @@
+if not ENV.has_key?('AO_DEFAULT_VAGRANT_PASSWORD')
+  abort "This Vagrantfile needs AO_DEFAULT_VAGRANT_PASSWORD environment variable to be defined. Aborting"
+end
+
+Vagrant.configure("2") do |config|
+  config.vm.define :"ubuntu-focal" do |ubuntu_focal|
+    ubuntu_focal.vm.box = "ubuntu/focal64"
+    ubuntu_focal.vm.hostname = "ubuntu-focal-vm"
+    ubuntu_focal.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--uart1", "off"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
+    end
+
+    ubuntu_focal.vm.network "private_network", ip: "192.168.80.31", virtualbox__intnet: "vagrant-win-linux"
+    ubuntu_focal.vm.provision "shell", name: "Enable cleartext passwords for SSH",
+      keep_color: true,
+      inline: <<-SHELL
+        set -euo pipefail
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        systemctl restart sshd
+      SHELL
+  end
+
+  config.vm.define "win10" do |win10|
+    win10.vm.box = "cheretbe/win10ltsc2019_ru_64"
+    win10.winrm.username = "vagrant"
+    win10.winrm.password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    win10.vm.boot_timeout = 900
+
+    win10.vm.provider "virtualbox" do |vb|
+      vb.memory = "4096"
+      vb.cpus = "2"
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    end
+
+    win10.vm.network "private_network", ip: "192.168.80.32", virtualbox__intnet: "vagrant-win-linux"
+  end
+
+  config.vm.define :"ansible-controller" do |ansible_controller|
+    ansible_controller.vm.box = "cheretbe/ansible-controller"
+    ansible_controller.vm.hostname = "ansible-controller"
+    ansible_controller.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    ansible_controller.vm.network "private_network", ip: "192.168.80.30", virtualbox__intnet: "vagrant-win-linux"
+
+    ansible_controller.vm.provision "ansible_local" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.install = false
+      ansible.playbook = "provision/linux_provision.yml"
+      ansible.inventory_path = "provision/inventory.yml"
+      ansible.limit = "ubuntu-focal"
+      # ansible.extra_vars = {
+      #   purevpn_server:   purevpn_server,
+      #   purevpn_protocol: purevpn_protocol,
+      #   purevpn_user:     purevpn_user,
+      #   purevpn_password: purevpn_password,
+      #   lan_if_ipv4: "192.168.80.11",
+      # }
+    end
+
+    ansible_controller.vm.provision "ansible_local" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.install = false
+      ansible.playbook = "provision/win_provision.yml"
+      ansible.extra_vars = {
+        ansible_password: "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}",
+      }
+      ansible.inventory_path = "provision/inventory.yml"
+      ansible.limit = "win10"
+    end
+  end
+
+end
