@@ -6,9 +6,9 @@
 | **burp-server**           | default | `vagrant-burp`          | `172.24.0.10`    |
 | **domain-member**         | default | `vagrant-domain`        | `192.168.199.12` |
 | **package-cache**         | default | `---`                   | `---`            |
-| **ubuntu-bionic**         | default | `---`                   | `---`            |
-| **ubuntu-focal**          | default | `---`                   | `---`            |
-| **ubuntu-xenial**         | default | `---`                   | `---`            |
+| **ubuntu-bionic**         | default | `vagrant-intnet`        | `192.168.80.21`  |
+| **ubuntu-focal**          | default | `vagrant-intnet`        | `192.168.80.22`  |
+| **ubuntu-xenial**         | default | `vagrant-intnet`        | `192.168.80.20`  |
 | **ubuntu-zfs**            | default | `---`                   | `---`            |
 
 
@@ -47,6 +47,6 @@
 |                           | vpn-client               | `vagrant-vpn-client-lan`                    | `192.168.1.10`                    |
 | **tim-clients**           | internal                 | `---`                                       | `---`                             |
 |                           | external                 | `---`                                       | `---`                             |
-| **win+linux**             | ubuntu-focal             | `vagrant-win-linux`                         | `192.168.80.31`                   |
-|                           | win10                    | `vagrant-win-linux`                         | `192.168.80.32`                   |
-|                           | ansible-controller       | `vagrant-win-linux`                         | `192.168.80.30`                   |
+| **win+linux**             | ubuntu-focal             | `vagrant-intnet`                            | `192.168.80.31`                   |
+|                           | win10                    | `vagrant-intnet`                            | `192.168.80.32`                   |
+|                           | ansible-controller       | `vagrant-intnet`                            | `192.168.80.30`                   |
