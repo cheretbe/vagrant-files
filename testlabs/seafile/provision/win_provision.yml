@@ -1,0 +1,15 @@
+---
+
+- name: Windows box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Update hosts file
+      community.windows.win_hosts:
+        state: present
+        canonical_name: seafile.test.local
+        ip_address: 192.168.80.41
