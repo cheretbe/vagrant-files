@@ -45,3 +45,8 @@ def read_local_settings(settings)
 
   return OpenStruct.new(return_value)
 end
+
+def add_bridged_adapter(vm, adapter_settings)
+  # Convert hash keys from strings to symbols
+  vm.network("public_network", adapter_settings.transform_keys(&:to_sym))
+end
