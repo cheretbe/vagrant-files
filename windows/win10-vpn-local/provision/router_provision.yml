@@ -81,7 +81,9 @@
           puttygen
           /vagrant/.vagrant/machines/router/virtualbox/private_key
           -o /vagrant/temp/vagrant_private_key.ppk
-        creates: /vagrant/temp/vagrant_private_key.ppk
+        # We deliberately skipping this check to prevent ending up with an old
+        # key after destroy/up cycle
+        # creates: /vagrant/temp/vagrant_private_key.ppk
 
     - name: Enable IPv4 forwarding
       ansible.posix.sysctl:
