@@ -8,32 +8,6 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    - name: Install PowerShell modules
-      community.windows.win_psmodule:
-        name: "{{ item.name }}"
-        state: present
-        allow_clobber: "{{ item.allow_clobber | default(false) }}"
-      loop:
-        - {"name": "nuget"}
-        - {"name": "Pscx", allow_clobber: yes}
-
-    - name: Install Google Chrome browser
-      win_chocolatey:
-        name: googlechrome
-        state: present
-        ignore_checksums: yes
-
-    - name: Add 'uBlock Origin' extension to Google Chrome
-      win_regedit:
-        path: HKLM:\SOFTWARE\WOW6432Node\Google\Chrome\Extensions\cjpalhdlnbpafiamejdnhcphjbkeiagm
-        name: update_url
-        data: https://clients2.google.com/service/update2/crx
-
-    - name: Install Mozilla Firefox browser
-      win_chocolatey:
-        name: firefox
-        state: present
-
     - name: Download DNS leak test script
       ansible.windows.win_get_url:
         url: "https://raw.githubusercontent.com/macvk/dnsleaktest/master/dnsleaktest.bat"
