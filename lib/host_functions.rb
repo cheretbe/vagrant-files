@@ -50,3 +50,16 @@ def add_bridged_adapter(vm, adapter_settings)
   # Convert hash keys from strings to symbols
   vm.network("public_network", adapter_settings.transform_keys(&:to_sym))
 end
+
+def add_audio_controler(vb)
+  audio_driver = case RUBY_PLATFORM
+    when /linux/
+      "pulse"
+    when /darwin/
+      "coreaudio"
+    else
+      "dsound"
+    end
+  vb.customize ["modifyvm", :id, "--audio", audio_driver, "--audiocontroller", "hda"]
+  vb.customize ["modifyvm", :id, "--audioout", "on"]
+end
