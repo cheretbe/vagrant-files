@@ -3,6 +3,7 @@
 ---
 # win_memory: "4096"
 # win_cpus: "2"
+sound: true
 # https://github.com/cheretbe/notes/blob/master/vagrant.md#networking
 # bridged_adapter: {}
 bridged_adapter:
