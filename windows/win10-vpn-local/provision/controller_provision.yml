@@ -1,0 +1,14 @@
+---
+- name: Ansible controller box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Checkout shared playbooks repo
+      git:
+        repo: "https://github.com/cheretbe/ansible-playbooks.git"
+        dest: "/opt/ansible-playbooks"
+      become: true
