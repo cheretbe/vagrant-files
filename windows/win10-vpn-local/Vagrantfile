@@ -28,6 +28,19 @@ Vagrant.configure("2") do |config|
         sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
         systemctl restart sshd
       SHELL
+
+    # It seems that "Configuring and enabling network interfaces..." step of
+    # `vagrant up` somehow breaks routing through the VPN. Until we know what
+    # exactly going on, use this crude workaround
+    router.vm.provision "shell", name: "Restart openvpn-client@purevpn service",
+      keep_color: true, run: "always",
+      inline: <<-SHELL
+        set -euo pipefail
+        if systemctl is-active --quiet openvpn-client@purevpn; then
+          echo "Restarting openvpn-client@purevpn service"
+          systemctl restart openvpn-client@purevpn
+        fi
+      SHELL
   end
 
   config.vm.define "win10" do |win10|
