@@ -18,7 +18,9 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
     end
 
-    router.vm.network "private_network", ip: "192.168.80.11", virtualbox__intnet: "vagrant-win-vpn"
+    router.vm.network "private_network", ip: "192.168.80.11",
+      virtualbox__intnet: "vagrant-win-vpn", mac: "080027F441DB"
+
     router.vm.provision "shell", name: "Enable cleartext passwords for SSH",
       keep_color: true,
       inline: <<-SHELL
@@ -76,11 +78,12 @@ Vagrant.configure("2") do |config|
       ansible.inventory_path = "provision/inventory.yml"
       ansible.limit = "router"
       ansible.extra_vars = {
-        purevpn_server:   local_settings.purevpn_server,
-        purevpn_protocol: local_settings.purevpn_protocol,
-        purevpn_user:     local_settings.purevpn_user,
-        purevpn_password: local_settings.purevpn_password,
-        lan_if_ipv4: "192.168.80.11",
+        purevpn_ovpn_client_server:   local_settings.purevpn_server,
+        purevpn_ovpn_client_user:     local_settings.purevpn_user,
+        purevpn_ovpn_client_protocol: local_settings.purevpn_protocol,
+        purevpn_ovpn_client_password: local_settings.purevpn_password,
+        router_lan_mac_addr: "08:00:27:f4:41:db",
+        router_wan_if_name:  "ovpn-purevpn"
       }
     end
 
