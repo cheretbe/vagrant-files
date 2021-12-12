@@ -7,5 +7,7 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
+    # - import_role: name=/host_home/projects/ansible-playbooks/purevpn-ovpn-client
+    # - import_role: name=/host_home/projects/ansible-playbooks/router
     - import_role: name=/opt/ansible-playbooks/purevpn-ovpn-client
     - import_role: name=/opt/ansible-playbooks/router

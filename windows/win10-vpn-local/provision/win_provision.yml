@@ -8,8 +8,8 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    - import_role: name=/opt/ansible-playbooks/win-vpn-client
     # - import_role: name=/host_home/projects/ansible-playbooks/win-vpn-client
+    - import_role: name=/opt/ansible-playbooks/win-vpn-client
 
     - name: Run IP info script interactively
       community.windows.win_psexec:
@@ -20,3 +20,4 @@
         username: "{{ ansible_user }}"
         password: "{{ ansible_password }}"
         wait: no
+      changed_when: no
