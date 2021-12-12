@@ -21,6 +21,9 @@ Vagrant.configure("2") do |config|
     router.vm.network "private_network", ip: "192.168.80.11",
       virtualbox__intnet: "vagrant-win-vpn", mac: "080027F441DB"
 
+    router.vm.synced_folder "/", "/host"
+    router.vm.synced_folder Dir.home, "/host_home"
+
     router.vm.provision "shell", name: "Enable cleartext passwords for SSH",
       keep_color: true,
       inline: <<-SHELL
@@ -54,15 +57,25 @@ Vagrant.configure("2") do |config|
 
     win10.vm.network "private_network", ip: "192.168.80.12", virtualbox__intnet: "vagrant-win-vpn"
 
+    win10.vm.synced_folder "/", "/host"
+    win10.vm.synced_folder Dir.home, "/host_home"
+
     # "Configuring and enabling network interfaces..." step of `vagrant up`
     # resets default route.
     win10.vm.provision "shell", name: "Force default route fix",
-        run: "always", inline: <<-SHELL
+        run: "always", keep_color: true, inline: <<-SHELL
       # [enum]::GetValues([Microsoft.PowerShell.Cmdletization.GeneratedTypes.ScheduledTask.StateEnum])
       if ((Get-ScheduledTask -TaskName "Vagrant - Fix default route").State -ne "Running") {
         Write-Output "Executing scheduled task 'Vagrant - Fix default route'"
         Start-ScheduledTask -TaskName "Vagrant - Fix default route"
       }
+      # -d  Don't wait for process to terminate (non-interactive).
+      # -i  Run the program so that it interacts with the desktop of the specified
+      #     session on the remote system
+      & "C:\\Users\\vagrant\\AppData\\Local\\Programs\\vpn-tools\\PsExec64.exe" `
+        -accepteula `
+        -d -i 1 -u vagrant -p "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}" `
+        "c:\\users\\vagrant\\Desktop\\Get IP info.bat"
     SHELL
   end
 
@@ -73,6 +86,9 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
     ansible_controller.vm.network "private_network", ip: "192.168.80.10", virtualbox__intnet: "vagrant-win-vpn"
+
+    ansible_controller.vm.synced_folder "/", "/host"
+    ansible_controller.vm.synced_folder Dir.home, "/host_home"
 
     ansible_controller.vm.provision "ansible_local" do |ansible|
       ansible.compatibility_mode = "2.0"
