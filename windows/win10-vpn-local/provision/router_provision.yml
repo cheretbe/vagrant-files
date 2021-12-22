@@ -9,6 +9,19 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
+    - name: Fix multipath daemon error spamming system log
+      blockinfile:
+        path: /etc/multipath.conf
+        block: |
+          blacklist {
+            device {
+              vendor "VBOX"
+              product "HARDDISK"
+            }
+          }
+      become: yes
+      notify: Restart multipath daemon
+
     - import_role: name=/opt/ansible-playbooks/linux-utils
     - import_role: name=/opt/ansible-playbooks/linux-locale
     - import_role: name=/opt/ansible-playbooks/linux-timezone
@@ -16,3 +29,10 @@
     # - import_role: name=/host_home/projects/ansible-playbooks/router
     - import_role: name=/opt/ansible-playbooks/purevpn-ovpn-client
     - import_role: name=/opt/ansible-playbooks/router
+
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes
