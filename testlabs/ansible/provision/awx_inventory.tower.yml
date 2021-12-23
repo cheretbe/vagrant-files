@@ -1,0 +1,6 @@
+---
+plugin: tower
+host: http://localhost
+username: admin
+password: password
+inventory_id: Demo%20Inventory++Default

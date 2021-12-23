@@ -1,0 +1,24 @@
+---
+
+- name: Telegram notifications provision
+  hosts: all
+
+  tasks:
+    - block:
+        - name: Make sure bin directory exists
+          ansible.builtin.file:
+            path: /home/vagrant/bin
+            state: directory
+            owner: vagrant
+            group: vagrant
+            mode: u=rwx,g=rx,o=rx
+
+        - name: Copy notification script
+          ansible.builtin.template:
+            src: finished.sh.j2
+            dest: /home/vagrant/bin/finished
+            owner: vagrant
+            group: vagrant
+            mode: u=rwx,g=rx,o=rx
+
+      when: telegram_chat_id != None

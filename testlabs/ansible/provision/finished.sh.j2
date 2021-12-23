@@ -1,0 +1,7 @@
+#!/bin/bash
+
+c_time="$(TZ=Europe/Kaliningrad date +'%_H:%M')"
+curl -s -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{"chat_id": "{{ telegram_chat_id }}", "text": "'${c_time}' - '$(hostname -f)'", "disable_notification": false}' \
+    https://api.telegram.org/bot{{ telegram_chat_bot_token }}/sendMessage 1>/dev/null

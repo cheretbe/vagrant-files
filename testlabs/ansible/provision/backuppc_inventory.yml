@@ -1,0 +1,64 @@
+---
+all:
+  vars:
+    ansible_user: vagrant
+  hosts:
+    ubuntu-focal:
+      ansible_host: 192.168.80.51
+    ubuntu-bionic:
+      ansible_host: 192.168.80.52
+    win10:
+      ansible_host: 192.168.80.54
+      ansible_connection: winrm
+      ansible_port: "5985"
+      ansible_winrm_transport: ntlm
+      ansible_password: "{{ lookup('env', 'AO_DEFAULT_VAGRANT_PASSWORD') }}"
+
+backuppc:
+  vars:
+    # backuppc_server_version: "4.3.2"
+    # backuppc_server_backuppc_xs_version: "0.59"
+    # backuppc_server_rsync_bpc_version: "3.0.9.15"
+    backuppc_server_data_dir: "/backuppc"
+    backuppc_server_www_users:
+      # vagrant/vagrant
+      - 
+        user_name: vagrant
+        password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          39336565623162356332613063646162316638323165656363353032336338326634393531356566
+          3036633335363130356131383035356230666662323038350a613566653863336336346261336232
+          33303361356634313461316631323161363433653138386433366139353434386137653466383532
+          6333643161303763630a656435326435663632623738376232306131633566346137356630653361
+          3165
+  hosts:
+    ubuntu-focal:
+    ubuntu-bionic:
+
+backuppc_clients_linux:
+  vars:
+    backuppc_client_ssh_auth_key: "{{ lookup('file', '/ansible-playbooks/backuppc-client/molecule/common/test.key.pub') }}"
+    backuppc_client_custom_sudo_commands:
+      - { comment: "Test command 1", command: "/etc/custom/command_1" }
+      - { comment: "Test command 2", command: "/etc/custom/command_2" }
+  hosts:
+    ubuntu-focal:
+    ubuntu-bionic:
+
+backuppc_clients_rsync_linux:
+  vars:
+    backuppc_client_rsync_user_name: backuppc
+    backuppc_client_rsync_password: backuppc
+  hosts:
+    ubuntu-focal:
+    ubuntu-bionic:
+
+backuppc_clients_windows:
+  hosts:
+    win10:
+
+backuppc_clients:
+  children:
+    backuppc_clients_linux:
+    backuppc_clients_windows:
+    backuppc_clients_rsync_linux:

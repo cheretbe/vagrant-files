@@ -1,0 +1,34 @@
+---
+all:
+  vars:
+    ansible_user: vagrant
+  hosts:
+    ubuntu-focal:
+      ansible_host: 192.168.80.51
+    ubuntu-bionic:
+      ansible_host: 192.168.80.52
+    ubuntu-xenial:
+      ansible_host: 192.168.80.53
+    centos-7:
+      ansible_host: 192.168.80.54
+    centos-8:
+      ansible_host: 192.168.80.55
+    win10:
+      ansible_host: 192.168.80.56
+
+windows:
+  vars:
+    ansible_connection: winrm
+    ansible_port: "5985"
+    ansible_winrm_transport: ntlm
+    ansible_password: "{{ lookup('env', 'AO_DEFAULT_VAGRANT_PASSWORD') }}"
+    scan_user_password: dummy
+    rs_gur_domain_user_password: dummy
+    rs_main_server_name: central-main.rs-kgr.local
+    rs_burp_server: burp.domain.tld
+    rs_burp_cname: burp_cname
+    rs_burp_password: burp_pwd
+    rs_burp_home_subnet: "192.168.0.0"
+    rs_burp_home_subnet_mask: "255.255.255.0"
+  hosts:
+    win10:

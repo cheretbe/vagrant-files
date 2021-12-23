@@ -53,3 +53,10 @@
 | **win+linux**             | ubuntu-focal             | `vagrant-intnet`                            | `192.168.80.31`                   |
 |                           | win10                    | `vagrant-intnet`                            | `192.168.80.32`                   |
 |                           | ansible-controller       | `vagrant-intnet`                            | `192.168.80.30`                   |
+| **ansible**               | ansible                  | `vagrant-intnet`                            | `192.168.80.50`                   |
+|                           | ubuntu-focal             | `vagrant-intnet`                            | `192.168.80.51`                   |
+|                           | ubuntu-bionic            | `vagrant-intnet`                            | `192.168.80.52`                   |
+|                           | ubuntu-xenial            | `vagrant-intnet`                            | `192.168.80.53`                   |
+|                           | centos-7                 | `vagrant-intnet`                            | `192.168.80.54`                   |
+|                           | centos-8                 | `vagrant-intnet`                            | `192.168.80.55`                   |
+|                           | win10                    | `vagrant-intnet`                            | `192.168.80.56`                   |
