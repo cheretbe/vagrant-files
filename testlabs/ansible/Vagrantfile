@@ -1,5 +1,10 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
+check_env_variables(
+  mandatory_vars: ["AO_DEFAULT_VAGRANT_PASSWORD"],
+  optional_vars:["AO_TELEGRAM_CHAT_ID", "AO_TELEGRAM_BOT_TOKEN"]
+)
+
 local_settings = read_local_settings([
   {"name" => "use_awx", "default" => false},
   {"name" => "awx_version", "default" => ""},
@@ -9,14 +14,6 @@ local_settings = read_local_settings([
   {"name" => "docker_mirror_param", "default" => ""}
 ])
 
-# require "yaml"
-# require (File.dirname(__FILE__) + "/../common/common")
-
-# if not ENV.has_key?("AO_DEFAULT_VAGRANT_PASSWORD") then
-#   abort "ERROR: AO_DEFAULT_VAGRANT_PASSWORD environment variable is not defined"
-# end
-
-# win_password = "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
 
 required_plugins = %w(vagrant-vbguest)
 
@@ -28,27 +25,6 @@ if not plugins_to_install.empty?
   puts "vagrant plugin install #{plugins_to_install.join(' ')}\n\n"
   abort "Installation of one or more additional plugins needed. Aborting."
 end
-
-# use_awx = false
-# awx_version = ""
-# docker_mirror_param = ""
-# ansible_vm_memory = "4096"
-# ansible_vm_cpus = "1"
-# package_cache_host = ""
-# if File.file?("local-config.yml")
-#   local_config = YAML.load_file("local-config.yml")
-#   unless local_config.nil?
-#     use_awx = local_config.fetch("use_awx", use_awx)
-#     awx_version = local_config.fetch("awx_version", awx_version)
-#     docker_mirror_param = local_config.fetch("docker_mirror", "")
-#     unless docker_mirror_param.empty?
-#       docker_mirror_param = "--docker-mirror " + docker_mirror_param
-#     end
-#     ansible_vm_memory = local_config.fetch("ansible_vm_memory", ansible_vm_memory)
-#     ansible_vm_cpus = local_config.fetch("ansible_vm_cpus", ansible_vm_cpus)
-#     package_cache_host = local_config.fetch("package_cache_host", package_cache_host)
-#   end
-# end
 
 Vagrant.configure("2") do |config|
   config.vm.define :ansible do |ansible|
@@ -86,6 +62,10 @@ Vagrant.configure("2") do |config|
         )
       SHELL
 
+    ansible.vm.provision "file",
+      source: Dir.home + "/.vagrant.d/insecure_private_key",
+      destination: "/home/vagrant/.ssh/id_rsa"
+
     ansible.vm.provision "shell",
       name: "Ansible configuration",
       keep_color: true, privileged: false,
@@ -97,10 +77,8 @@ Vagrant.configure("2") do |config|
 
         echo "Configuring SSH"
         chmod 700 /home/vagrant/.ssh
-        mkdir -p /home/vagrant/.ssh
-        cp /vagrant/provision/id_rsa /home/vagrant/.ssh/id_rsa
         chmod 600 /home/vagrant/.ssh/id_rsa
-        cp /vagrant/provision/id_rsa.pub /home/vagrant/.ssh/id_rsa.pub
+        ssh-keygen -y -f /home/vagrant/.ssh/id_rsa > /home/vagrant/.ssh/id_rsa.pub
 
         echo "Setting AO_DEFAULT_VAGRANT_PASSWORD env variable"
         sudo sh -c 'echo "export AO_DEFAULT_VAGRANT_PASSWORD=#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}" > /etc/profile.d/test_settings.sh'
@@ -249,7 +227,6 @@ Vagrant.configure("2") do |config|
     win10.vm.network "private_network", ip: "192.168.80.56", virtualbox__intnet: "vagrant-intnet"
 
     win10.vm.synced_folder Dir.home, "/host_home"
-    # win7.vm.provision "shell", path: "provision-script.ps1"
   end
 
 end
