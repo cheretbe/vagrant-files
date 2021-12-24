@@ -1,3 +1,13 @@
+Temporarily use additional Ubuntu box
+```shell
+# on the host
+cd ../../linux/ubuntu-focal/
+vagrant up
+vagrant ssh -- python3 /host_home/projects/vagrant-files/testlabs/ansible/provision/setup_host.py
+
+# in ansible box
+ansible -i 192.168.80.22, -u vagrant -m setup all
+
 ```shell
 # --natpf<1-N> [<rulename>],tcp|udp,[<hostip>],<hostport>,[<guestip>],<guestport>]
 # [!] Note that for running VM the syntax is controlvm natpf<1-N> and for
