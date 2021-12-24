@@ -63,3 +63,34 @@ def add_audio_controler(vb)
   vb.customize ["modifyvm", :id, "--audio", audio_driver, "--audiocontroller", "hda"]
   vb.customize ["modifyvm", :id, "--audioout", "on"]
 end
+
+def check_env_variables(mandatory_vars: [], optional_vars: [])
+  missing_mandatory_vars = []
+  missing_optional_vars = []
+
+  mandatory_vars.each do |mandatory_var|
+    if not ENV.has_key?(mandatory_var)
+      missing_mandatory_vars.push(" - " + mandatory_var)
+    end
+  end
+
+  optional_vars.each do |optional_var|
+    if not ENV.has_key?(optional_var)
+      missing_optional_vars.push(" - " + optional_var)
+    end
+  end
+
+  if missing_optional_vars.length > 0
+    @vagrant_ui.warn format("The following recommended environment variable(s) "\
+      "are not defined:\n%s", missing_optional_vars.join("\n"))
+  end
+
+  if missing_mandatory_vars.length > 0
+    @vagrant_ui.error format("The following mandatory environment variable(s) are "\
+      "not defined:\n%s", missing_mandatory_vars.join("\n"))
+    if ARGV[0] == "up"
+      @vagrant_ui.error "Aborting"
+      abort
+    end
+  end
+end
