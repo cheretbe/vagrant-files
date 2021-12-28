@@ -1,0 +1,23 @@
+---
+
+- name: Windows box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    # - import_role: name=/host_home/projects/ansible-playbooks/win-vpn-client
+    - import_role: name=/opt/ansible-playbooks/win-vpn-client
+
+    - name: Run IP info script interactively
+      community.windows.win_psexec:
+        command: "\"c:\\users\\vagrant\\Desktop\\Get IP info.bat\""
+        executable: "C:\\Users\\vagrant\\AppData\\Local\\Programs\\vpn-tools\\PsExec64.exe"
+        interactive: yes
+        session: 1
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
+        wait: no
+      changed_when: no

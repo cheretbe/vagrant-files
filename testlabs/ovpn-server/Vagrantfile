@@ -1,0 +1,108 @@
+class CustomProvisionPlugin < Vagrant.plugin('2')
+  class CustomProvisionAction
+    def initialize(app, env)
+      @app = app
+    end
+
+    def call(env)
+      @app.call(env)
+      machine = env[:machine]
+      class << machine
+        attr_accessor :custom_provision_enabled
+      end
+      machine.custom_provision_enabled = env[:provision_enabled]
+    end
+  end
+
+  name "custom_provision"
+
+  action_hook "custom_provision" do |hook|
+    hook.after Vagrant::Action::Builtin::Provision, CustomProvisionAction
+  end
+end
+
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings([
+  {"name" => "purevpn_server", "default" => "nl2-ovpn-udp.pointtoserver.com"},
+  {"name" => "purevpn_protocol", "default" => "udp"},
+  {"name" => "purevpn_user"},
+  {"name" => "purevpn_password"},
+  {"name" => "sound", "default" => false}
+])
+
+Vagrant.configure("2") do |config|
+  config.vm.define :"ansible-controller" do |ansible_controller|
+    ansible_controller.vm.box = "cheretbe/ansible-controller"
+    ansible_controller.vm.hostname = "ansible-controller"
+    ansible_controller.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    ansible_controller.vm.network "private_network", ip: "192.168.80.10", virtualbox__intnet: "vagrant-win-vpn"
+
+    ansible_controller.vm.synced_folder "/", "/host"
+    ansible_controller.vm.synced_folder Dir.home, "/host_home"
+
+    ansible_controller.vm.provision "ansible_local" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.install = false
+      ansible.playbook = "provision/controller_provision.yml"
+    end
+  end
+
+  config.vm.define :"server" do |server|
+    server.vm.box = "ubuntu/focal64"
+    server.vm.hostname = "server"
+    server.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+      vb.customize ["modifyvm", :id, "--uart1", "off"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
+    end
+
+    server.vm.network "private_network", ip: "192.168.80.11",
+      virtualbox__intnet: "vagrant-win-vpn", mac: "080027F441DB"
+
+    server.vm.synced_folder "/", "/host"
+    server.vm.synced_folder Dir.home, "/host_home"
+
+    server.vm.provision "shell", name: "Enable cleartext passwords for SSH",
+      keep_color: true,
+      inline: <<-SHELL
+        set -euo pipefail
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        systemctl restart sshd
+      SHELL
+
+    server.trigger.after [:up, :reload, :provision] do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled
+          machine.ui.info("there you go: #{machine.custom_provision_enabled}")
+          system("vagrant", "ssh", "ansible-controller", "--",
+            "/home/vagrant/.cache/venv/ansible/bin/ansible-playbook -i /vagrant/provision/inventory.yml -l server /vagrant/provision/server_provision.yml")
+        end
+      end
+    end
+  end
+
+  config.vm.define "win10", autostart: false do |win10|
+    win10.vm.box = "cheretbe/win10_gui"
+
+    win10.vm.provider "virtualbox" do |vb|
+      if local_settings.sound
+        add_audio_controler(vb)
+      end
+    end
+
+    win10.vm.network "private_network", ip: "192.168.80.12", virtualbox__intnet: "vagrant-win-vpn"
+
+    win10.vm.synced_folder "/", "/host"
+    win10.vm.synced_folder Dir.home, "/host_home"
+
+    # "Configuring and enabling network interfaces..." step of `vagrant up`
+    # resets default route. Fixing
+    win10.vm.provision "shell", name: "Force default route fix",
+        run: "always", keep_color: true, path: "provision/win_on_up.ps1",
+        args: "-vagrantPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+  end
+
+end
