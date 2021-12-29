@@ -1,3 +1,24 @@
+# Based on:
+# https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/base.rb
+# https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/guest.rb
+def ansible_provision(machine, target_host, extra_vars: {})
+  env_variables = "PYTHONUNBUFFERED=1"
+  env_variables += " ANSIBLE_FORCE_COLOR=true" if machine.env.ui.color?
+  # machine.env.ui.warn("target_host: #{target_host}, extra_vars: #{extra_vars}")
+  # machine.env.ui.warn("env_variables: #{env_variables}")
+  command = "hostname; hostname -I"
+  ansible_controller = machine.env.machine(:"ansible-controller", :virtualbox)
+  result = ansible_controller.communicate.execute(command, error_check: false) do |type, data|
+    if [:stderr, :stdout].include?(type)
+      machine.env.ui.info(data, new_line: false, prefix: false)
+    end
+  end
+  machine.env.ui.warn("result: #{result}")
+  # TODO: check which output it produces in the original plugin and decide whether
+  #       we need to implement something similar
+  # raise Ansible::Errors::AnsibleCommandFailed if result != 0
+end
+
 class CustomProvisionPlugin < Vagrant.plugin('2')
   class CustomProvisionAction
     def initialize(app, env)
@@ -76,9 +97,24 @@ Vagrant.configure("2") do |config|
     server.trigger.after [:up, :reload, :provision] do |trigger|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled
-          machine.ui.info("there you go: #{machine.custom_provision_enabled}")
-          system("vagrant", "ssh", "ansible-controller", "--",
-            "/home/vagrant/.cache/venv/ansible/bin/ansible-playbook -i /vagrant/provision/inventory.yml -l server /vagrant/provision/server_provision.yml")
+          controller = machine.env.machine(:"ansible-controller", :virtualbox)
+          extra_vars = {
+            "var1" => "value1",
+            "var2" => "value2 with space"
+          }
+          # controller.communicate.execute("ANSIBLE_FORCE_COLOR=true /home/vagrant/.cache/venv/ansible/bin/ansible-playbook -i /vagrant/provision/inventory.yml -l server /vagrant/provision/server_provision.yml --extra-vars " + extra_vars.to_json.shellescape) do |type, data|
+          #   if [:stderr, :stdout].include?(type)
+          #     machine.env.ui.info(data, new_line: false, prefix: false)
+          #   end
+          # end
+          ansible_provision(
+            machine,
+            target_host="server",
+            extra_vars: {
+              "var1": "value1",
+              "var2": "value2 with space"
+            }
+          )
         end
       end
     end

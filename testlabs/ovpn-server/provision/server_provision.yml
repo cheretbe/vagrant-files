@@ -6,3 +6,6 @@
     - name: Print host information
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - debug:
+        var: var2
