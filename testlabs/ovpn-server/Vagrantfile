@@ -1,22 +1,31 @@
+class CustomAnsibleError < Vagrant::Errors::VagrantError
+  error_message(
+    "Ansible provision failed to complete successfully. Any error output should be visible above"
+  )
+end
+
 # Based on:
 # https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/base.rb
 # https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/guest.rb
-def ansible_provision(machine, target_host, extra_vars: {})
+def ansible_provision(machine, target_host, playbook, extra_vars: {})
+  machine.ui.info("Provisioning with Ansible playbook '#{playbook}'")
   env_variables = "PYTHONUNBUFFERED=1"
   env_variables += " ANSIBLE_FORCE_COLOR=true" if machine.env.ui.color?
-  # machine.env.ui.warn("target_host: #{target_host}, extra_vars: #{extra_vars}")
-  # machine.env.ui.warn("env_variables: #{env_variables}")
-  command = "hostname; hostname -I"
+
+  command = "#{env_variables} "\
+            "/home/vagrant/.cache/venv/ansible/bin/ansible-playbook "\
+            "-i /vagrant/provision/inventory.yml "\
+            "-l #{target_host} --extra-vars #{extra_vars.to_json.shellescape} "\
+            "/vagrant/provision/#{playbook}"
+  Vagrant.global_logger.info("Ansible command: #{command}")
+
   ansible_controller = machine.env.machine(:"ansible-controller", :virtualbox)
   result = ansible_controller.communicate.execute(command, error_check: false) do |type, data|
     if [:stderr, :stdout].include?(type)
       machine.env.ui.info(data, new_line: false, prefix: false)
     end
   end
-  machine.env.ui.warn("result: #{result}")
-  # TODO: check which output it produces in the original plugin and decide whether
-  #       we need to implement something similar
-  # raise Ansible::Errors::AnsibleCommandFailed if result != 0
+  raise CustomAnsibleError if result != 0
 end
 
 class CustomProvisionPlugin < Vagrant.plugin('2')
@@ -44,13 +53,13 @@ end
 
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
-local_settings = read_local_settings([
-  {"name" => "purevpn_server", "default" => "nl2-ovpn-udp.pointtoserver.com"},
-  {"name" => "purevpn_protocol", "default" => "udp"},
-  {"name" => "purevpn_user"},
-  {"name" => "purevpn_password"},
-  {"name" => "sound", "default" => false}
-])
+# local_settings = read_local_settings([
+#   {"name" => "purevpn_server", "default" => "nl2-ovpn-udp.pointtoserver.com"},
+#   {"name" => "purevpn_protocol", "default" => "udp"},
+#   {"name" => "purevpn_user"},
+#   {"name" => "purevpn_password"},
+#   {"name" => "sound", "default" => false}
+# ])
 
 Vagrant.configure("2") do |config|
   config.vm.define :"ansible-controller" do |ansible_controller|
@@ -69,6 +78,17 @@ Vagrant.configure("2") do |config|
       ansible.install = false
       ansible.playbook = "provision/controller_provision.yml"
     end
+
+    # ansible_controller.vm.provision "shell", name: "Provision Ansible controller",
+    #   keep_color: true,
+    #   inline: <<-SHELL
+    #     set -euo pipefail
+
+    #     python3 <<EOF
+    #     print('Hello')
+    #     print("there you go")
+    #     EOF
+    #   SHELL
   end
 
   config.vm.define :"server" do |server|
@@ -97,24 +117,13 @@ Vagrant.configure("2") do |config|
     server.trigger.after [:up, :reload, :provision] do |trigger|
       trigger.ruby do |env,machine|
         if machine.custom_provision_enabled
-          controller = machine.env.machine(:"ansible-controller", :virtualbox)
-          extra_vars = {
-            "var1" => "value1",
-            "var2" => "value2 with space"
-          }
-          # controller.communicate.execute("ANSIBLE_FORCE_COLOR=true /home/vagrant/.cache/venv/ansible/bin/ansible-playbook -i /vagrant/provision/inventory.yml -l server /vagrant/provision/server_provision.yml --extra-vars " + extra_vars.to_json.shellescape) do |type, data|
-          #   if [:stderr, :stdout].include?(type)
-          #     machine.env.ui.info(data, new_line: false, prefix: false)
-          #   end
-          # end
-          ansible_provision(
-            machine,
+          ansible_provision machine,
             target_host="server",
+            playbook="server_provision.yml",
             extra_vars: {
               "var1": "value1",
               "var2": "value2 with space"
             }
-          )
         end
       end
     end
@@ -122,12 +131,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "win10", autostart: false do |win10|
     win10.vm.box = "cheretbe/win10_gui"
-
-    win10.vm.provider "virtualbox" do |vb|
-      if local_settings.sound
-        add_audio_controler(vb)
-      end
-    end
 
     win10.vm.network "private_network", ip: "192.168.80.12", virtualbox__intnet: "vagrant-win-vpn"
 
