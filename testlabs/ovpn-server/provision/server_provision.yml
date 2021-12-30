@@ -7,5 +7,64 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    - debug:
-        var: var2
+    - name: Fix multipath daemon error spamming system log
+      blockinfile:
+        path: /etc/multipath.conf
+        block: |
+          blacklist {
+            device {
+              vendor "VBOX"
+              product "HARDDISK"
+            }
+          }
+      become: yes
+      notify: Restart multipath daemon
+
+    - name: Set common Ansible playbooks path
+      set_fact:
+        # common_playbooks_path: /opt/ansible-playbooks
+        common_playbooks_path: >-
+          {% if use_local_repo %}/host_home/projects/ansible-playbooks{% else %}/opt/ansible-playbooks{%endif%}
+
+    - include_role: name="{{ common_playbooks_path }}/linux-utils"
+    - include_role: name="{{ common_playbooks_path }}/linux-locale"
+    - include_role: name="{{ common_playbooks_path }}/linux-timezone"
+
+    - name: Create test CA directory
+      ansible.builtin.file:
+        path: /home/vagrant/test-ca
+        state: directory
+        mode: '0755'
+
+    - name: Create test CA private key
+      community.crypto.openssl_privatekey:
+        path: /home/vagrant/test-ca/ca.key
+        # passphrase: "{{ secret_ca_passphrase }}"
+
+    - name: Create CSR for test CA certificate
+      community.crypto.openssl_csr:
+        path: /home/vagrant/test-ca/ca.csr
+        privatekey_path: /home/vagrant/test-ca/ca.key
+        # privatekey_passphrase: "{{ secret_ca_passphrase }}"
+        common_name: VPN Test CA
+        basic_constraints:
+          - 'CA:TRUE'
+        basic_constraints_critical: yes
+        key_usage:
+          - keyCertSign
+        key_usage_critical: true
+
+    - name: Create self-signed test CA certificate from CSR
+      community.crypto.x509_certificate:
+        path: /home/vagrant/test-ca/ca.crt
+        csr_path: /home/vagrant/test-ca/ca.csr
+        privatekey_path: /home/vagrant/test-ca/ca.key
+        # privatekey_passphrase: "{{ secret_ca_passphrase }}"
+        provider: selfsigned
+
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes

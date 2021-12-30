@@ -1,7 +1,8 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
 local_settings = read_local_settings([
-  {"name" => "ovpn_server_protocol", "default" => "udp"}
+  {"name" => "ovpn_server_protocol", "default" => "udp"},
+  {"name" => "use_local_repo", "default" => false}
 ])
 
 Vagrant.configure("2") do |config|
@@ -40,8 +41,7 @@ Vagrant.configure("2") do |config|
             target_host="server",
             playbook="server_provision.yml",
             extra_vars: {
-              "var1": "value1",
-              "var2": "value2 with space"
+              "use_local_repo": local_settings.use_local_repo
             }
         end
       end
