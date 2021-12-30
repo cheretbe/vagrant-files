@@ -1,5 +1,34 @@
 require "ostruct"
 
+class CustomAnsibleError < Vagrant::Errors::VagrantError
+  error_message(
+    "Ansible provision failed to complete successfully. Any error output should be visible above"
+  )
+end
+
+class CustomProvisionPlugin < Vagrant.plugin('2')
+  class CustomProvisionAction
+    def initialize(app, env)
+      @app = app
+    end
+
+    def call(env)
+      @app.call(env)
+      machine = env[:machine]
+      class << machine
+        attr_accessor :custom_provision_enabled
+      end
+      machine.custom_provision_enabled = env[:provision_enabled]
+    end
+  end
+
+  name "custom_provision"
+
+  action_hook "custom_provision" do |hook|
+    hook.after Vagrant::Action::Builtin::Provision, CustomProvisionAction
+  end
+end
+
 @vagrant_ui = Vagrant::UI::Colored.new
 
 def read_local_settings(settings)
@@ -93,4 +122,62 @@ def check_env_variables(mandatory_vars: [], optional_vars: [])
       abort
     end
   end
+end
+
+def define_ansible_controller(
+    config, ip, intnet_name: "vagrant-intnet", custom_playbook: nil
+  )
+  config.vm.define :"ansible-controller" do |ansible_controller|
+    ansible_controller.vm.box = "cheretbe/ansible-controller"
+    ansible_controller.vm.hostname = "ansible-controller"
+    ansible_controller.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    end
+    ansible_controller.vm.network "private_network", ip: ip, virtualbox__intnet: intnet_name
+
+    ansible_controller.vm.synced_folder "/", "/host"
+    ansible_controller.vm.synced_folder Dir.home, "/host_home"
+
+    ansible_controller.vm.provision "file",
+      source: File.dirname(__FILE__) + "/ansible_controller_provision.yml",
+      destination: "/home/vagrant/ansible_controller_provision.yml"
+
+    ansible_controller.vm.provision "ansible_local" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.install = false
+      ansible.playbook = "/home/vagrant/ansible_controller_provision.yml"
+    end
+
+    unless custom_playbook.nil?
+      ansible_controller.vm.provision "ansible_local" do |ansible|
+        ansible.compatibility_mode = "2.0"
+        ansible.install = false
+        ansible.playbook = custom_playbook
+      end
+    end
+  end
+end
+
+# Based on:
+# https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/base.rb
+# https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/guest.rb
+def ansible_provision(machine, target_host, playbook, extra_vars: {})
+  machine.ui.info("Provisioning with Ansible playbook '#{playbook}'")
+  env_variables = "PYTHONUNBUFFERED=1"
+  env_variables += " ANSIBLE_FORCE_COLOR=true" if machine.env.ui.color?
+
+  command = "#{env_variables} "\
+            "/home/vagrant/.cache/venv/ansible/bin/ansible-playbook "\
+            "-i /vagrant/provision/inventory.yml "\
+            "-l #{target_host} --extra-vars #{extra_vars.to_json.shellescape} "\
+            "/vagrant/provision/#{playbook}"
+  Vagrant.global_logger.info("Ansible command: #{command}")
+
+  ansible_controller = machine.env.machine(:"ansible-controller", :virtualbox)
+  result = ansible_controller.communicate.execute(command, error_check: false) do |type, data|
+    if [:stderr, :stdout].include?(type)
+      machine.env.ui.info(data, new_line: false, prefix: false)
+    end
+  end
+  raise CustomAnsibleError if result != 0
 end
