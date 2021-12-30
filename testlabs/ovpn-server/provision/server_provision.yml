@@ -20,11 +20,14 @@
       become: yes
       notify: Restart multipath daemon
 
-    - name: Create test CA directory
+    - name: Create test CA directory structure
       ansible.builtin.file:
-        path: /home/vagrant/test-ca
+        path: "{{ item }}"
         state: directory
         mode: '0755'
+      loop:
+        - /home/vagrant/test-ca
+        - /home/vagrant/test-ca/keys
 
     - name: Create test CA private key
       community.crypto.openssl_privatekey:
@@ -51,6 +54,26 @@
         privatekey_path: /home/vagrant/test-ca/ca.key
         # privatekey_passphrase: "{{ secret_ca_passphrase }}"
         provider: selfsigned
+
+    - name: Create VPN server private key
+      community.crypto.openssl_privatekey:
+        path: /home/vagrant/test-ca/keys/server.key
+
+    - name: Create CSR for the server certificate
+      community.crypto.openssl_csr:
+        path: /home/vagrant/test-ca/keys/server.csr
+        privatekey_path: /home/vagrant/test-ca/keys/server.key
+        common_name: server
+        subject_alt_name: "DNS:server.example.com"
+
+    - name: Sign the server certificate
+      community.crypto.x509_certificate:
+        path: /home/vagrant/test-ca/keys/server.crt
+        csr_path: /home/vagrant/test-ca/keys/server.csr
+        ownca_path: /home/vagrant/test-ca/ca.crt
+        ownca_privatekey_path: /home/vagrant/test-ca/ca.key
+        ownca_not_before: -5h
+        provider: ownca
 
     - name: Set common Ansible playbooks path
       set_fact:
