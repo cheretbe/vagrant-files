@@ -1,0 +1,8 @@
+---
+- name: Ansible controller box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information (once again)
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"

@@ -61,14 +61,16 @@ require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 #   {"name" => "sound", "default" => false}
 # ])
 
-Vagrant.configure("2") do |config|
+def define_ansible_controller(
+    config, ip, intnet_name: "vagrant-intnet", custom_playbook: nil
+  )
   config.vm.define :"ansible-controller" do |ansible_controller|
     ansible_controller.vm.box = "cheretbe/ansible-controller"
     ansible_controller.vm.hostname = "ansible-controller"
     ansible_controller.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     end
-    ansible_controller.vm.network "private_network", ip: "192.168.80.10", virtualbox__intnet: "vagrant-win-vpn"
+    ansible_controller.vm.network "private_network", ip: ip, virtualbox__intnet: intnet_name
 
     ansible_controller.vm.synced_folder "/", "/host"
     ansible_controller.vm.synced_folder Dir.home, "/host_home"
@@ -79,17 +81,23 @@ Vagrant.configure("2") do |config|
       ansible.playbook = "provision/controller_provision.yml"
     end
 
-    # ansible_controller.vm.provision "shell", name: "Provision Ansible controller",
-    #   keep_color: true,
-    #   inline: <<-SHELL
-    #     set -euo pipefail
-
-    #     python3 <<EOF
-    #     print('Hello')
-    #     print("there you go")
-    #     EOF
-    #   SHELL
+    unless custom_playbook.nil?
+      ansible_controller.vm.provision "ansible_local" do |ansible|
+        ansible.compatibility_mode = "2.0"
+        ansible.install = false
+        ansible.playbook = custom_playbook
+      end
+    end
   end
+end
+
+Vagrant.configure("2") do |config|
+  define_ansible_controller(
+    config=config,
+    ip="192.168.80.10",
+    intnet_name: "vagrant-win-vpn"
+    # custom_playbook: "provision/controller_provision_1.yml"
+  )
 
   config.vm.define :"server" do |server|
     server.vm.box = "ubuntu/focal64"
