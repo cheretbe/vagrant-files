@@ -1,18 +1,13 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
-# local_settings = read_local_settings([
-#   {"name" => "purevpn_server", "default" => "nl2-ovpn-udp.pointtoserver.com"},
-#   {"name" => "purevpn_protocol", "default" => "udp"},
-#   {"name" => "purevpn_user"},
-#   {"name" => "purevpn_password"},
-#   {"name" => "sound", "default" => false}
-# ])
+local_settings = read_local_settings([
+  {"name" => "ovpn_server_protocol", "default" => "udp"}
+])
 
 Vagrant.configure("2") do |config|
   define_ansible_controller(
     config=config,
-    ip="192.168.80.10",
-    intnet_name: "vagrant-win-vpn"
+    ip="192.168.80.60"
   )
 
   config.vm.define :"server" do |server|
@@ -24,8 +19,8 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
     end
 
-    server.vm.network "private_network", ip: "192.168.80.11",
-      virtualbox__intnet: "vagrant-win-vpn", mac: "080027F441DB"
+    server.vm.network "private_network", ip: "192.168.80.61",
+      virtualbox__intnet: "vagrant-intnet", mac: "080027F441DB"
 
     server.vm.synced_folder "/", "/host"
     server.vm.synced_folder Dir.home, "/host_home"
@@ -56,16 +51,23 @@ Vagrant.configure("2") do |config|
   config.vm.define "win10", autostart: false do |win10|
     win10.vm.box = "cheretbe/win10_gui"
 
-    win10.vm.network "private_network", ip: "192.168.80.12", virtualbox__intnet: "vagrant-win-vpn"
+    win10.vm.network "private_network", ip: "192.168.80.62", virtualbox__intnet: "vagrant-intnet"
 
     win10.vm.synced_folder "/", "/host"
     win10.vm.synced_folder Dir.home, "/host_home"
 
-    # "Configuring and enabling network interfaces..." step of `vagrant up`
-    # resets default route. Fixing
-    win10.vm.provision "shell", name: "Force default route fix",
-        run: "always", keep_color: true, path: "provision/win_on_up.ps1",
-        args: "-vagrantPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+    win10.trigger.after [:up, :reload, :provision] do |trigger|
+      trigger.ruby do |env,machine|
+        if machine.custom_provision_enabled
+          ansible_provision machine,
+            target_host="win10",
+            playbook="win_provision.yml",
+            extra_vars: {
+              "ansible_password": "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+            }
+        end
+      end
+    end
   end
 
 end

@@ -31,10 +31,20 @@
 
 | Environment               | VM Name                  | Int. Network Name                           | IP Address                        |
 |---------------------------|--------------------------|---------------------------------------------|-----------------------------------|
+| **ansible**               | ansible                  | `vagrant-intnet`                            | `192.168.80.50`                   |
+|                           | ubuntu-focal             | `vagrant-intnet`                            | `192.168.80.51`                   |
+|                           | ubuntu-bionic            | `vagrant-intnet`                            | `192.168.80.52`                   |
+|                           | ubuntu-xenial            | `vagrant-intnet`                            | `192.168.80.53`                   |
+|                           | centos-7                 | `vagrant-intnet`                            | `192.168.80.54`                   |
+|                           | centos-8                 | `vagrant-intnet`                            | `192.168.80.55`                   |
+|                           | win10                    | `vagrant-intnet`                            | `192.168.80.56`                   |
 | **burp**                  | burp-server              | `vagrant-intnet`                            | `172.24.0.20`                     |
 |                           | win10                    | `vagrant-intnet`                            | `172.24.0.11`                     |
 |                           | ubuntu-bionic            | `vagrant-intnet`                            | `172.24.0.12`                     |
 |                           | ansible-controller       | `vagrant-intnet`                            | `172.24.0.10`                     |
+| **ovpn-server**           | ansible-controller       | `vagrant-intnet`                            | `192.168.80.60`                   |
+|                           | server                   | `vagrant-intnet`                            | `192.168.80.61`                   |
+|                           | win10                    | `vagrant-intnet`                            | `192.168.80.62`                   |
 | **linux-iptables-router** | isp                      | `vagrant-isp`                               | `192.168.78.1`                    |
 |                           | router                   | `vagrant-isp`<br>`vagrant-client`           | `192.168.78.2`<br>`192.168.79.10` |
 |                           | client                   | `vagrant-client`                            | `192.168.79.11`                   |
@@ -53,10 +63,3 @@
 | **win+linux**             | ubuntu-focal             | `vagrant-intnet`                            | `192.168.80.31`                   |
 |                           | win10                    | `vagrant-intnet`                            | `192.168.80.32`                   |
 |                           | ansible-controller       | `vagrant-intnet`                            | `192.168.80.30`                   |
-| **ansible**               | ansible                  | `vagrant-intnet`                            | `192.168.80.50`                   |
-|                           | ubuntu-focal             | `vagrant-intnet`                            | `192.168.80.51`                   |
-|                           | ubuntu-bionic            | `vagrant-intnet`                            | `192.168.80.52`                   |
-|                           | ubuntu-xenial            | `vagrant-intnet`                            | `192.168.80.53`                   |
-|                           | centos-7                 | `vagrant-intnet`                            | `192.168.80.54`                   |
-|                           | centos-8                 | `vagrant-intnet`                            | `192.168.80.55`                   |
-|                           | win10                    | `vagrant-intnet`                            | `192.168.80.56`                   |
