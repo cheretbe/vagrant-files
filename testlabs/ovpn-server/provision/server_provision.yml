@@ -20,16 +20,6 @@
       become: yes
       notify: Restart multipath daemon
 
-    - name: Set common Ansible playbooks path
-      set_fact:
-        # common_playbooks_path: /opt/ansible-playbooks
-        common_playbooks_path: >-
-          {% if use_local_repo %}/host_home/projects/ansible-playbooks{% else %}/opt/ansible-playbooks{%endif%}
-
-    - include_role: name="{{ common_playbooks_path }}/linux-utils"
-    - include_role: name="{{ common_playbooks_path }}/linux-locale"
-    - include_role: name="{{ common_playbooks_path }}/linux-timezone"
-
     - name: Create test CA directory
       ansible.builtin.file:
         path: /home/vagrant/test-ca
@@ -61,6 +51,17 @@
         privatekey_path: /home/vagrant/test-ca/ca.key
         # privatekey_passphrase: "{{ secret_ca_passphrase }}"
         provider: selfsigned
+
+    - name: Set common Ansible playbooks path
+      set_fact:
+        # common_playbooks_path: /opt/ansible-playbooks
+        common_playbooks_path: >-
+          {% if use_local_repo %}/host_home/projects/ansible-playbooks{% else %}/opt/ansible-playbooks{%endif%}
+
+    - include_role: name="{{ common_playbooks_path }}/linux-utils"
+    - include_role: name="{{ common_playbooks_path }}/linux-locale"
+    - include_role: name="{{ common_playbooks_path }}/linux-timezone"
+    - include_role: name="{{ common_playbooks_path }}/ovpn-server"
 
   handlers:
     - name: Restart multipath daemon
