@@ -20,24 +20,34 @@
       become: yes
       notify: Restart multipath daemon
 
+    - name: Install openvpn package
+      apt:
+        name: ["openvpn"]
+        update_cache: yes
+        # # 1 hour
+        cache_valid_time: 3600
+      become: yes
+
     - name: Create test CA directory structure
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         mode: '0755'
       loop:
-        - /home/vagrant/test-ca
-        - /home/vagrant/test-ca/keys
+        - /vagrant/temp/test-ca
+        - /vagrant/temp/test-ca/keys
 
     - name: Create test CA private key
       community.crypto.openssl_privatekey:
-        path: /home/vagrant/test-ca/ca.key
+        path: /vagrant/temp/test-ca/ca.key
         # passphrase: "{{ secret_ca_passphrase }}"
+        type: ECC
+        curve: secp521r1
 
     - name: Create CSR for test CA certificate
       community.crypto.openssl_csr:
-        path: /home/vagrant/test-ca/ca.csr
-        privatekey_path: /home/vagrant/test-ca/ca.key
+        path: /vagrant/temp/test-ca/ca.csr
+        privatekey_path: /vagrant/temp/test-ca/ca.key
         # privatekey_passphrase: "{{ secret_ca_passphrase }}"
         common_name: VPN Test CA
         basic_constraints:
@@ -49,31 +59,40 @@
 
     - name: Create self-signed test CA certificate from CSR
       community.crypto.x509_certificate:
-        path: /home/vagrant/test-ca/ca.crt
-        csr_path: /home/vagrant/test-ca/ca.csr
-        privatekey_path: /home/vagrant/test-ca/ca.key
+        path: /vagrant/temp/test-ca/ca.crt
+        csr_path: /vagrant/temp/test-ca/ca.csr
+        privatekey_path: /vagrant/temp/test-ca/ca.key
         # privatekey_passphrase: "{{ secret_ca_passphrase }}"
+        ownca_digest: sha512
         provider: selfsigned
 
     - name: Create VPN server private key
       community.crypto.openssl_privatekey:
-        path: /home/vagrant/test-ca/keys/server.key
+        path: /vagrant/temp/test-ca/keys/server.key
+        type: ECC
+        curve: secp521r1
 
     - name: Create CSR for the server certificate
       community.crypto.openssl_csr:
-        path: /home/vagrant/test-ca/keys/server.csr
-        privatekey_path: /home/vagrant/test-ca/keys/server.key
+        path: /vagrant/temp/test-ca/keys/server.csr
+        privatekey_path: /vagrant/temp/test-ca/keys/server.key
         common_name: server
         subject_alt_name: "DNS:server.example.com"
 
     - name: Sign the server certificate
       community.crypto.x509_certificate:
-        path: /home/vagrant/test-ca/keys/server.crt
-        csr_path: /home/vagrant/test-ca/keys/server.csr
-        ownca_path: /home/vagrant/test-ca/ca.crt
-        ownca_privatekey_path: /home/vagrant/test-ca/ca.key
+        path: /vagrant/temp/test-ca/keys/server.crt
+        csr_path: /vagrant/temp/test-ca/keys/server.csr
+        ownca_path: /vagrant/temp/test-ca/ca.crt
+        ownca_privatekey_path: /vagrant/temp/test-ca/ca.key
         ownca_not_before: -5h
         provider: ownca
+        ownca_digest: sha512
+
+    - name: Generate HMAC key
+      ansible.builtin.command: /usr/sbin/openvpn --genkey --secret /vagrant/temp/test-ca/ta.key
+      args:
+        creates: /vagrant/temp/test-ca/ta.key
 
     - name: Set common Ansible playbooks path
       set_fact:
