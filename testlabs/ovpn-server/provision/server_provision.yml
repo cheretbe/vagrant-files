@@ -94,9 +94,30 @@
       args:
         creates: /vagrant/temp/test-ca/ta.key
 
+    - name: Create VPN client private key
+      community.crypto.openssl_privatekey:
+        path: /vagrant/temp/test-ca/keys/client1.key
+        type: ECC
+        curve: secp521r1
+
+    - name: Create CSR for the client certificate
+      community.crypto.openssl_csr:
+        path: /vagrant/temp/test-ca/keys/client1.csr
+        privatekey_path: /vagrant/temp/test-ca/keys/client1.key
+        common_name: client1
+
+    - name: Sign the client certificate
+      community.crypto.x509_certificate:
+        path: /vagrant/temp/test-ca/keys/client1.crt
+        csr_path: /vagrant/temp/test-ca/keys/client1.csr
+        ownca_path: /vagrant/temp/test-ca/ca.crt
+        ownca_privatekey_path: /vagrant/temp/test-ca/ca.key
+        ownca_not_before: -5h
+        provider: ownca
+        ownca_digest: sha512
+
     - name: Set common Ansible playbooks path
       set_fact:
-        # common_playbooks_path: /opt/ansible-playbooks
         common_playbooks_path: >-
           {% if use_local_repo %}/host_home/projects/ansible-playbooks{% else %}/opt/ansible-playbooks{%endif%}
 
@@ -104,6 +125,16 @@
     - include_role: name="{{ common_playbooks_path }}/linux-locale"
     - include_role: name="{{ common_playbooks_path }}/linux-timezone"
     - include_role: name="{{ common_playbooks_path }}/ovpn-server"
+
+    - name: Create test client configuration file
+      ansible.builtin.command:
+        cmd: >-
+          /etc/openvpn/server/client-config/make_client_config.sh
+          client1
+          /vagrant/temp/test-ca/keys/client1.crt
+          /vagrant/temp/test-ca/keys/client1.key
+        chdir: /vagrant/temp
+        creates: /vagrant/temp/client1.ovpn
 
   handlers:
     - name: Restart multipath daemon
