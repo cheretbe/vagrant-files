@@ -6,3 +6,16 @@
     - name: Print host information
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    # https://www.npackd.org/p/openvpn64
+    - name: Install OpenVPN client package
+      ansible.windows.win_package:
+        path: https://swupdate.openvpn.org/community/releases/OpenVPN-2.5.5-I602-amd64.msi
+        product_id: '{ECDEB23C-E72D-F54F-081D-D2180DBF1497}'
+        state: present
+
+    - name: Copy OpenVPN client config
+      ansible.windows.win_copy:
+        src: 'C:\vagrant\temp\client1.ovpn'
+        dest: 'C:\Program Files\OpenVPN\config\client1.ovpn'
+        remote_src: yes
