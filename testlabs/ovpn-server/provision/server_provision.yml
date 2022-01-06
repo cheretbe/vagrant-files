@@ -55,6 +55,7 @@
         basic_constraints_critical: yes
         key_usage:
           - keyCertSign
+          - cRLSign
         key_usage_critical: true
 
     - name: Create self-signed test CA certificate from CSR
@@ -78,6 +79,21 @@
         privatekey_path: /vagrant/temp/test-ca/keys/server.key
         common_name: server
         subject_alt_name: "DNS:server.example.com"
+        basic_constraints:
+          - 'CA:FALSE'
+        basic_constraints_critical: yes
+        key_usage:
+          #- digitalSignature
+          #- Key Encipherment
+          - nonRepudiation
+          - digitalSignature
+          - keyEncipherment
+          - keyAgreement
+        key_usage_critical: true
+        extended_key_usage:
+          - serverAuth  # the same as "TLS Web Server Authentication"
+        extended_key_usage_critical: true
+
 
     - name: Sign the server certificate
       community.crypto.x509_certificate:
@@ -105,6 +121,17 @@
         path: /vagrant/temp/test-ca/keys/client1.csr
         privatekey_path: /vagrant/temp/test-ca/keys/client1.key
         common_name: client1
+        basic_constraints:
+          - 'CA:FALSE'
+        basic_constraints_critical: yes
+        key_usage:
+          - nonRepudiation
+          - digitalSignature
+          - keyEncipherment
+        key_usage_critical: true
+        extended_key_usage:
+          - clientAuth
+        extended_key_usage_critical: true
 
     - name: Sign the client certificate
       community.crypto.x509_certificate:
