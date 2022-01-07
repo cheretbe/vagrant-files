@@ -7,6 +7,11 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
+    - name: Add VPN server entry to hosts file
+      community.windows.win_lineinfile:
+        path: c:\Windows\System32\drivers\etc\hosts
+        line: "192.168.80.61 vpn.example.com"
+
     # https://www.npackd.org/p/openvpn64
     - name: Install OpenVPN client package
       ansible.windows.win_package:
