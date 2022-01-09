@@ -152,6 +152,7 @@
     - include_role: name="{{ common_playbooks_path }}/linux-locale"
     - include_role: name="{{ common_playbooks_path }}/linux-timezone"
     - include_role: name="{{ common_playbooks_path }}/ovpn-server"
+    - include_role: name="{{ common_playbooks_path }}/router"
 
     - name: Create test client configuration file
       ansible.builtin.command:
@@ -161,7 +162,8 @@
           /vagrant/temp/test-ca/keys/client1.crt
           /vagrant/temp/test-ca/keys/client1.key
         chdir: /vagrant/temp
-        creates: /vagrant/temp/client1.ovpn
+        # creates: /vagrant/temp/client1.ovpn
+      changed_when: false
 
   handlers:
     - name: Restart multipath daemon
