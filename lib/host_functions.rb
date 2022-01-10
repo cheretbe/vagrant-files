@@ -173,8 +173,8 @@ end
 # Based on:
 # https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/base.rb
 # https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/guest.rb
-def ansible_provision(machine, target_host, playbook, extra_vars: {})
-  machine.ui.info("Provisioning with Ansible playbook '#{playbook}'")
+def do_host_ansible_provision(machine, target_host, playbook, extra_vars: {})
+  machine.ui.detail("Provisioning with Ansible playbook '#{playbook}'")
   env_variables = "PYTHONUNBUFFERED=1"
   env_variables += " ANSIBLE_FORCE_COLOR=true" if machine.env.ui.color?
 
@@ -192,4 +192,20 @@ def ansible_provision(machine, target_host, playbook, extra_vars: {})
     end
   end
   raise CustomAnsibleError if result != 0
+end
+
+
+def ansible_provision(config, playbook, extra_vars: {})
+  config.trigger.after [:up, :reload, :provision, :snapshot_restore] do |trigger|
+    trigger.ruby do |env,machine|
+      if machine.state.id == :running and machine.custom_provision_enabled
+        # machine.ui.warn(machine.name)
+        # machine.ui.warn(extra_vars)
+        do_host_ansible_provision machine,
+          target_host=machine.name,
+          playbook=playbook,
+          extra_vars: extra_vars
+      end
+    end
+  end
 end
