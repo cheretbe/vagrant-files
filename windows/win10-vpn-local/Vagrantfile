@@ -5,10 +5,18 @@ local_settings = read_local_settings([
   {"name" => "purevpn_protocol", "default" => "udp"},
   {"name" => "purevpn_user"},
   {"name" => "purevpn_password"},
-  {"name" => "sound", "default" => false}
+  {"name" => "sound", "default" => false},
+  {"name" => "common_repo_source", "default" => "master"}
 ])
 
 Vagrant.configure("2") do |config|
+  define_ansible_controller(
+    config=config,
+    ip="192.168.80.10",
+    intnet_name: "vagrant-win-vpn",
+    common_repo_source: local_settings.common_repo_source
+  )
+
   config.vm.define :"router" do |router|
     router.vm.box = "ubuntu/focal64"
     router.vm.hostname = "router"
@@ -44,6 +52,20 @@ Vagrant.configure("2") do |config|
           systemctl restart openvpn-client@purevpn
         fi
       SHELL
+
+    ansible_provision router,
+      playbook="router_provision.yml",
+      extra_vars: {
+        "purevpn_ovpn_client_server":       local_settings.purevpn_server,
+        "purevpn_ovpn_client_user":         local_settings.purevpn_user,
+        "purevpn_ovpn_client_protocol":     local_settings.purevpn_protocol,
+        "purevpn_ovpn_client_password":     local_settings.purevpn_password,
+        "purevpn_ovpn_client_operator_key": "/vagrant/.vagrant/machines/router/virtualbox/private_key",
+        "purevpn_ovpn_client_keys_dir":     "/vagrant/temp",
+        "purevpn_ovpn_client_operator":     "vagrant",
+        "router_lan_if_mac_addr":           "08:00:27:f4:41:db",
+        "router_wan_if_name":               "ovpn-purevpn"
+      }
   end
 
   config.vm.define "win10" do |win10|
@@ -65,57 +87,15 @@ Vagrant.configure("2") do |config|
     win10.vm.provision "shell", name: "Force default route fix",
         run: "always", keep_color: true, path: "provision/win_on_up.ps1",
         args: "-vagrantPassword #{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
-  end
 
-  config.vm.define :"ansible-controller" do |ansible_controller|
-    ansible_controller.vm.box = "cheretbe/ansible-controller"
-    ansible_controller.vm.hostname = "ansible-controller"
-    ansible_controller.vm.provider "virtualbox" do |vb|
-      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-    end
-    ansible_controller.vm.network "private_network", ip: "192.168.80.10", virtualbox__intnet: "vagrant-win-vpn"
-
-    ansible_controller.vm.synced_folder "/", "/host"
-    ansible_controller.vm.synced_folder Dir.home, "/host_home"
-
-    ansible_controller.vm.provision "ansible_local" do |ansible|
-      ansible.compatibility_mode = "2.0"
-      ansible.install = false
-      ansible.playbook = "provision/controller_provision.yml"
-    end
-
-    ansible_controller.vm.provision "ansible_local" do |ansible|
-      ansible.compatibility_mode = "2.0"
-      ansible.install = false
-      ansible.playbook = "provision/router_provision.yml"
-      ansible.inventory_path = "provision/inventory.yml"
-      ansible.limit = "router"
-      ansible.extra_vars = {
-        purevpn_ovpn_client_server:   local_settings.purevpn_server,
-        purevpn_ovpn_client_user:     local_settings.purevpn_user,
-        purevpn_ovpn_client_protocol: local_settings.purevpn_protocol,
-        purevpn_ovpn_client_password: local_settings.purevpn_password,
-        purevpn_ovpn_client_operator_key: "/vagrant/.vagrant/machines/router/virtualbox/private_key",
-        purevpn_ovpn_client_keys_dir: "/vagrant/temp",
-        purevpn_ovpn_client_operator: "vagrant",
-        router_lan_mac_addr: "08:00:27:f4:41:db",
-        router_wan_if_name:  "ovpn-purevpn"
+    ansible_provision win10,
+      playbook="win_provision.yml",
+      extra_vars: {
+        "ansible_password":           "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}",
+        "win_vpn_client_user_name":   "vagrant",
+        "win_vpn_client_ssh_key":     "/vagrant/temp/operator_key_openssh",
+        "win_vpn_client_router":      "192.168.80.11",
+        "win_vpn_client_router_user": "vagrant"
       }
-    end
-
-    ansible_controller.vm.provision "ansible_local" do |ansible|
-      ansible.compatibility_mode = "2.0"
-      ansible.install = false
-      ansible.playbook = "provision/win_provision.yml"
-      ansible.extra_vars = {
-        ansible_password: "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}",
-        win_vpn_client_user_name: "vagrant",
-        win_vpn_client_ssh_key: "/vagrant/temp/operator_key_openssh",
-        win_vpn_client_router: "192.168.80.11",
-        win_vpn_client_router_user: "vagrant"
-      }
-      ansible.inventory_path = "provision/inventory.yml"
-      ansible.limit = "win10"
-    end
   end
 end
