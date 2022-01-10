@@ -7,8 +7,42 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
+    - name: Get shared playbooks directory information
+      ansible.builtin.stat:
+        path: /opt/ansible-playbooks
+      register: playbooks_dir_info
+
     - name: Checkout shared playbooks repo
-      git:
-        repo: "https://github.com/cheretbe/ansible-playbooks.git"
-        dest: "/opt/ansible-playbooks"
-      become: true
+      block:
+        - name: Make sure target directory is not a symlink
+          ansible.builtin.file:
+            path: /opt/ansible-playbooks
+            state: absent
+          become: true
+          when: playbooks_dir_info.stat.exists and playbooks_dir_info.stat.islnk
+
+        - name: Checkout shared playbooks repo
+          git:
+            repo: "https://github.com/cheretbe/ansible-playbooks.git"
+            dest: /opt/ansible-playbooks
+            version: "{{ common_repo_source }}"
+          become: true
+      when: common_repo_source != "local"
+
+    - name: Symlink shared playbooks to host's directory
+      block:
+        - name: Make sure target directory doesn't exist as a regular directory
+          ansible.builtin.file:
+            path: /opt/ansible-playbooks
+            state: absent
+          become: true
+          when: playbooks_dir_info.stat.exists and (not playbooks_dir_info.stat.islnk)
+
+        - name: Symlink shared playbooks to host's directory
+          ansible.builtin.file:
+            state: link
+            src: /host_home/projects/ansible-playbooks
+            dest: /opt/ansible-playbooks
+            force: true
+          become: true
+      when: common_repo_source == "local"

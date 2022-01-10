@@ -125,8 +125,17 @@ def check_env_variables(mandatory_vars: [], optional_vars: [])
 end
 
 def define_ansible_controller(
-    config, ip, intnet_name: "vagrant-intnet", custom_playbook: nil
+    config, ip, intnet_name: "vagrant-intnet", custom_playbook: nil, common_repo_source: "master"
   )
+  valid_repo_values = ["master", "develop", "local"]
+  unless valid_repo_values.include? common_repo_source
+    @vagrant_ui.error (
+      "Incorrect value for 'common_repo_source' parameter: #{common_repo_source}. Valid " +
+      "options are #{valid_repo_values}"
+    )
+    abort
+  end
+
   config.vm.define :"ansible-controller" do |ansible_controller|
     ansible_controller.vm.box = "cheretbe/ansible-controller"
     ansible_controller.vm.hostname = "ansible-controller"
@@ -146,6 +155,9 @@ def define_ansible_controller(
       ansible.compatibility_mode = "2.0"
       ansible.install = false
       ansible.playbook = "/home/vagrant/ansible_controller_provision.yml"
+      ansible.extra_vars = {
+        common_repo_source: common_repo_source
+      }
     end
 
     unless custom_playbook.nil?
