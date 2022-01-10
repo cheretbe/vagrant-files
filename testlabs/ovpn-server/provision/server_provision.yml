@@ -152,6 +152,10 @@
     - include_role: name="{{ common_playbooks_path }}/linux-locale"
     - include_role: name="{{ common_playbooks_path }}/linux-timezone"
     - include_role: name="{{ common_playbooks_path }}/ovpn-server"
+
+    - name: Update facts to make ansible_tun0 variable available
+      setup:
+
     - include_role: name="{{ common_playbooks_path }}/router"
 
     - name: Create test client configuration file

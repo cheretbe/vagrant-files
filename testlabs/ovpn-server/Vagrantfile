@@ -35,33 +35,38 @@ Vagrant.configure("2") do |config|
         systemctl restart sshd
       SHELL
 
+    # We use themporary file to pass box's NAT adapter MAC address
     server.trigger.after [:up, :reload, :provision, :snapshot_restore] do |trigger|
       trigger.ruby do |env,machine|
-        if machine.custom_provision_enabled
-          server_mac_addr = machine.env.machine(:server, :virtualbox).provider.driver.read_mac_address
+        if machine.state.id == :running and machine.custom_provision_enabled
+          require 'yaml'
+          server_mac_addr = machine.provider.driver.read_mac_address
           # 02134CC3B1F0 => 02:13:4c:c3:b1:f0
           server_mac_addr = server_mac_addr.downcase.scan(/.{2}/).join(":")
-          ansible_provision machine,
-            target_host="server",
-            playbook="server_provision.yml",
-            extra_vars: {
-              "use_local_repo":         local_settings.use_local_repo,
-              "ovpn_server_ca_cert":    "/vagrant/temp/test-ca/ca.crt",
-              "ovpn_server_cert":       "/vagrant/temp/test-ca/keys/server.crt",
-              "ovpn_server_key":        "/vagrant/temp/test-ca/keys/server.key",
-              "ovpn_server_ta_key":     "/vagrant/temp/test-ca/ta.key",
-              "ovpn_server_dns_name":   "vpn.example.com",
-              "ovpn_server_protocol":   local_settings.ovpn_server_protocol,
-              "router_lan_if_name":     "tun0",
-              "router_wan_if_mac_addr": server_mac_addr,
-              "router_allow_wan_ssh":   true,
-              "router_custom_ports": [
-                {"protocol": local_settings.ovpn_server_protocol, "port": 1194, "comment": "Allow VPN"}
-              ]
-            }
+          machine.ui.detail("Writing 'provision/host_vars/server.yml'")
+          File.open(File.expand_path("../provision/host_vars/server.yml", __FILE__), "w") {
+            |f| YAML.dump({"router_wan_if_mac_addr" => server_mac_addr}, f)
+          }
         end
       end
     end
+
+    ansible_provision server,
+      playbook="server_provision.yml",
+      extra_vars: {
+        "use_local_repo":         local_settings.use_local_repo,
+        "ovpn_server_ca_cert":    "/vagrant/temp/test-ca/ca.crt",
+        "ovpn_server_cert":       "/vagrant/temp/test-ca/keys/server.crt",
+        "ovpn_server_key":        "/vagrant/temp/test-ca/keys/server.key",
+        "ovpn_server_ta_key":     "/vagrant/temp/test-ca/ta.key",
+        "ovpn_server_dns_name":   "vpn.example.com",
+        "ovpn_server_protocol":   local_settings.ovpn_server_protocol,
+        "router_lan_if_name":     "tun0",
+        "router_allow_wan_ssh":   true,
+        "router_custom_ports": [
+          {"protocol": local_settings.ovpn_server_protocol, "port": 1194, "comment": "Allow VPN"}
+        ]
+      }
   end
 
   config.vm.define "win10", autostart: false do |win10|
@@ -72,18 +77,11 @@ Vagrant.configure("2") do |config|
     win10.vm.synced_folder "/", "/host"
     win10.vm.synced_folder Dir.home, "/host_home"
 
-    win10.trigger.after [:up, :reload, :provision, :snapshot_restore] do |trigger|
-      trigger.ruby do |env,machine|
-        if machine.custom_provision_enabled
-          ansible_provision machine,
-            target_host="win10",
-            playbook="win_provision.yml",
-            extra_vars: {
-              "ansible_password": "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
-            }
-        end
-      end
-    end
+    ansible_provision win10,
+      playbook="win_provision.yml",
+      extra_vars: {
+        "ansible_password": "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
+      }
   end
 
 end
