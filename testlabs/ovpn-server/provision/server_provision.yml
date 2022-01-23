@@ -1,5 +1,8 @@
 ---
-- name: Router box provision
+- name: Setup common parameters
+  import_playbook: /opt/ansible-playbooks/linux_server_setup.yml
+
+- name: Server box provision
   hosts: all
 
   tasks:
@@ -143,21 +146,20 @@
         provider: ownca
         ownca_digest: sha512
 
-    - name: Set common Ansible playbooks path
-      set_fact:
-        common_playbooks_path: >-
-          {% if use_local_repo %}/host_home/projects/ansible-playbooks{% else %}/opt/ansible-playbooks{%endif%}
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes
 
-    - include_role: name="{{ common_playbooks_path }}/linux-utils"
-    - include_role: name="{{ common_playbooks_path }}/linux-locale"
-    - include_role: name="{{ common_playbooks_path }}/linux-timezone"
-    - include_role: name="{{ common_playbooks_path }}/ovpn-server"
+- name: Setup OpenVPN server
+  import_playbook: /opt/ansible-playbooks/ovpn_server_setup.yml
 
-    - name: Update facts to make ansible_tun0 variable available
-      setup:
+- name: Post-setup provision
+  hosts: all
 
-    - include_role: name="{{ common_playbooks_path }}/router"
-
+  tasks:
     - name: Create test client configuration file
       ansible.builtin.command:
         cmd: >-
@@ -168,10 +170,3 @@
         chdir: /vagrant/temp
         # creates: /vagrant/temp/client1.ovpn
       changed_when: false
-
-  handlers:
-    - name: Restart multipath daemon
-      ansible.builtin.systemd:
-        name: multipathd
-        state: restarted
-      become: yes
