@@ -1,0 +1,59 @@
+---
+- name: Setup common parameters
+  import_playbook: /opt/ansible-playbooks/linux_server_setup.yml
+
+- name: Terraform box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Fix multipath daemon error spamming system log
+      blockinfile:
+        path: /etc/multipath.conf
+        block: |
+          blacklist {
+            device {
+              vendor "VBOX"
+              product "HARDDISK"
+            }
+          }
+      become: yes
+      notify: Restart multipath daemon
+
+    - include_role: name="/opt/ansible-playbooks/docker-ce"
+
+    - name: Add HashiCorp repository key
+      apt_key:
+        url: https://apt.releases.hashicorp.com/gpg
+        state: present
+      become: yes
+
+    - name: Add HashiCorp repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        state: present
+      become: yes
+
+    - name: Update and upgrade apt packages
+      become: yes
+      apt:
+        upgrade: "yes"
+        update_cache: yes
+        # 10 min
+        cache_valid_time: 600
+
+    - name: Install Terraform package
+      apt:
+        name: terraform
+        update_cache: no
+      become: yes
+
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes

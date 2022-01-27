@@ -51,6 +51,8 @@
 |                           | external                 | `vagrant-isp`                               | `192.168.78.3`                    |
 | **seafile**               | seafile-server           | `vagrant-intnet`                            | `192.168.80.41`                   |
 |                           | win10                    | `vagrant-intnet`                            | `192.168.80.42`                   |
+| **terraform**             | ansible-controll         | `vagrant-intnet`                            | `192.168.80.70`                   |
+|                           | terraform                | `vagrant-intnet`                            | `192.168.80.71`                   |
 |                           | ansible-controller       | `vagrant-intnet`                            | `192.168.80.40`                   |
 | **tim**                   | client-router            | `vagrant-vpn-client-lan`<br>`vagrant-wan`   | `192.168.1.1`<br>`10.64.0.2/10`   |
 |                           | isp                      | `vagrant-wan`                               | `10.64.0.1/10`                    |
