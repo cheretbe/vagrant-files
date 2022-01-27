@@ -51,6 +51,16 @@
         update_cache: no
       become: yes
 
+    - name: Create SSH keys directory
+      ansible.builtin.file:
+        path: /home/vagrant/keys
+        state: directory
+        mode: '0700'
+
+    - name: Generate an OpenSSH keypair
+      community.crypto.openssh_keypair:
+        path: /home/vagrant/keys/npa_openssh.key
+
   handlers:
     - name: Restart multipath daemon
       ansible.builtin.systemd:
