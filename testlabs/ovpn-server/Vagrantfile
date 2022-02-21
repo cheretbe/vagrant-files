@@ -2,6 +2,7 @@ require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
 local_settings = read_local_settings([
   {"name" => "ovpn_server_protocol", "default" => "udp"},
+  {"name" => "ovpn_server_dns_resolver", "default" => true},
   {"name" => "common_repo_source", "default" => "master"}
 ])
 
@@ -54,15 +55,16 @@ Vagrant.configure("2") do |config|
     ansible_provision server,
       playbook="server_provision.yml",
       extra_vars: {
-        "use_local_repo":         local_settings.use_local_repo,
-        "ovpn_server_ca_cert":    "/vagrant/temp/test-ca/ca.crt",
-        "ovpn_server_cert":       "/vagrant/temp/test-ca/keys/server.crt",
-        "ovpn_server_key":        "/vagrant/temp/test-ca/keys/server.key",
-        "ovpn_server_ta_key":     "/vagrant/temp/test-ca/ta.key",
-        "ovpn_server_dns_name":   "vpn.example.com",
-        "ovpn_server_protocol":   local_settings.ovpn_server_protocol,
-        "router_lan_if_name":     "tun0",
-        "router_allow_wan_ssh":   true,
+        "use_local_repo":           local_settings.use_local_repo,
+        "ovpn_server_ca_cert":      "/vagrant/temp/test-ca/ca.crt",
+        "ovpn_server_cert":         "/vagrant/temp/test-ca/keys/server.crt",
+        "ovpn_server_key":          "/vagrant/temp/test-ca/keys/server.key",
+        "ovpn_server_ta_key":       "/vagrant/temp/test-ca/ta.key",
+        "ovpn_server_dns_name":     "vpn.example.com",
+        "ovpn_server_protocol":     local_settings.ovpn_server_protocol,
+        "ovpn_server_dns_resolver": local_settings.ovpn_server_dns_resolver,
+        "router_lan_if_name":       "tun0",
+        "router_allow_wan_ssh":     true,
         "router_custom_ports": [
           {"protocol": local_settings.ovpn_server_protocol, "port": 1194, "comment": "Allow VPN"}
         ]
