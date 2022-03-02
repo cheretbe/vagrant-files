@@ -1,13 +1,45 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
-local_settings = read_local_settings([
-  {"name" => "purevpn_server", "default" => "nl2-ovpn-udp.pointtoserver.com"},
-  {"name" => "purevpn_protocol", "default" => "udp"},
-  {"name" => "purevpn_user"},
-  {"name" => "purevpn_password"},
-  {"name" => "sound", "default" => false},
-  {"name" => "common_repo_source", "default" => "master"}
+local_settings_profile = read_local_settings([
+  {"name" => "ovpn_client_server_type"}
 ])
+
+if local_settings_profile.ovpn_client_server_type == "purevpn"
+  local_settings = read_local_settings([
+    {"name" => "ovpn_client_server_type"},
+    {"name" => "ovpn_client_server", "default" => "nl2-ovpn-udp.pointtoserver.com"},
+    {"name" => "ovpn_client_protocol", "default" => "udp"},
+    {"name" => "ovpn_client_purevpn_user"},
+    {"name" => "ovpn_client_purevpn_password"},
+    {"name" => "sound", "default" => false},
+    {"name" => "common_repo_source", "default" => "master"}
+  ])
+  router_extra_vars = {
+    "ovpn_client_purevpn_user"     => local_settings.ovpn_client_purevpn_user,
+    "ovpn_client_purevpn_password" => local_settings.ovpn_client_purevpn_password,
+    "router_wan_if_name"           => "ovpn-purevpn"
+  }
+elsif local_settings_profile.ovpn_client_server_type == "chere"
+  local_settings = read_local_settings([
+    {"name" => "ovpn_client_server_type"},
+    {"name" => "ovpn_client_server", "default" => "vpn.chere.one"},
+    {"name" => "ovpn_client_protocol", "default" => "udp"},
+    {"name" => "ovpn_client_chere_ta_key_file"},
+    {"name" => "ovpn_client_chere_client_cert_file"},
+    {"name" => "ovpn_client_chere_client_key_file"},
+    {"name" => "sound", "default" => false},
+    {"name" => "common_repo_source", "default" => "master"}
+  ])
+  router_extra_vars = {
+    "ovpn_client_chere_ta_key_file"      => local_settings.ovpn_client_chere_ta_key_file,
+    "ovpn_client_chere_client_cert_file" => local_settings.ovpn_client_chere_client_cert_file,
+    "ovpn_client_chere_client_key_file"  => local_settings.ovpn_client_chere_client_key_file,
+    "router_wan_if_name"                 => "ovpn-chere"
+  }
+elsif
+  @vagrant_ui.error ("Wrong ovpn_client_server_type value: #{local_settings_profile.ovpn_client_server_type}\nAborting")
+  abort
+end
 
 Vagrant.configure("2") do |config|
   define_ansible_controller(
@@ -55,17 +87,16 @@ Vagrant.configure("2") do |config|
 
     ansible_provision router,
       playbook="router_provision.yml",
-      extra_vars: {
-        "purevpn_ovpn_client_server":       local_settings.purevpn_server,
-        "purevpn_ovpn_client_user":         local_settings.purevpn_user,
-        "purevpn_ovpn_client_protocol":     local_settings.purevpn_protocol,
-        "purevpn_ovpn_client_password":     local_settings.purevpn_password,
-        "purevpn_ovpn_client_operator_key": "/vagrant/.vagrant/machines/router/virtualbox/private_key",
-        "purevpn_ovpn_client_keys_dir":     "/vagrant/temp",
-        "purevpn_ovpn_client_operator":     "vagrant",
-        "router_lan_if_mac_addr":           "08:00:27:f4:41:db",
-        "router_wan_if_name":               "ovpn-purevpn"
-      }
+      extra_vars: router_extra_vars.merge(
+        {
+          "ovpn_client_server"       => local_settings.ovpn_client_server,
+          "ovpn_client_server_type"  => local_settings.ovpn_client_server_type,
+          "ovpn_client_protocol"     => local_settings.ovpn_client_protocol,
+          "ovpn_client_operator"     => "vpn-operator",
+          "ovpn_client_operator_key" => "/vagrant/.vagrant/machines/router/virtualbox/private_key",
+          "router_lan_if_mac_addr"   => "08:00:27:f4:41:db"
+        }
+      )
   end
 
   config.vm.define "win10" do |win10|
@@ -93,9 +124,9 @@ Vagrant.configure("2") do |config|
       extra_vars: {
         "ansible_password":           "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}",
         "win_vpn_client_user_name":   "vagrant",
-        "win_vpn_client_ssh_key":     "/vagrant/temp/operator_key_openssh",
+        "win_vpn_client_ssh_key":     "/vagrant/.vagrant/machines/router/virtualbox/private_key",
         "win_vpn_client_router":      "192.168.80.11",
-        "win_vpn_client_router_user": "vagrant"
+        "win_vpn_client_router_user": "vpn-operator"
       }
   end
 end

@@ -25,9 +25,7 @@
     - import_role: name=/opt/ansible-playbooks/linux-utils
     - import_role: name=/opt/ansible-playbooks/linux-locale
     - import_role: name=/opt/ansible-playbooks/linux-timezone
-    # - import_role: name=/host_home/projects/ansible-playbooks/purevpn-ovpn-client
-    # - import_role: name=/host_home/projects/ansible-playbooks/router
-    - import_role: name=/opt/ansible-playbooks/purevpn-ovpn-client
+    - import_role: name=/opt/ansible-playbooks/ovpn-client
     - import_role: name=/opt/ansible-playbooks/router
 
   handlers:
