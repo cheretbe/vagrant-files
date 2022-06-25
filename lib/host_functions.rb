@@ -124,8 +124,11 @@ def check_env_variables(mandatory_vars: [], optional_vars: [])
   end
 end
 
+# def define(name, options=nil, &block)
+# https://github.com/hashicorp/vagrant/blob/main/plugins/kernel_v2/config/vm.rb#L434
 def define_ansible_controller(
-    config, ip, intnet_name: "vagrant-intnet", custom_playbook: nil, common_repo_source: "master"
+    config, ip, intnet_name: "vagrant-intnet", custom_playbook: nil,
+    common_repo_source: "master", &block
   )
   valid_repo_values = ["master", "develop", "local"]
   unless valid_repo_values.include? common_repo_source
@@ -167,6 +170,8 @@ def define_ansible_controller(
         ansible.playbook = custom_playbook
       end
     end
+
+    block.call ansible_controller if block
   end
 end
 
