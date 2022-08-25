@@ -1,0 +1,52 @@
+---
+- name: VPN client box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+  
+    - name: Fix multipath daemon error spamming system log
+      blockinfile:
+        path: /etc/multipath.conf
+        block: |
+          blacklist {
+            device {
+              vendor "VBOX"
+              product "HARDDISK"
+            }
+          }
+      become: yes
+      notify: Restart multipath daemon
+
+    - name: Override network settings
+      copy:
+        dest: /etc/netplan/90-vpn-overrides.yaml
+        content: |
+          ---
+          network:
+            ethernets:
+              enp0s3:
+                dhcp4-overrides:
+                  use-routes: false
+                  use-dns: false
+              enp0s8:
+                gateway4: 192.168.80.81
+                nameservers:
+                  addresses: [192.168.80.81]
+      become: yes
+      register: network_override
+
+    - name: Apply network settings
+      command:
+        /usr/sbin/netplan apply
+      become: yes
+      when: network_override.changed
+
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes
