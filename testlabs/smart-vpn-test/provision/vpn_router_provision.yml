@@ -1,0 +1,55 @@
+---
+- name: VPN router box provision
+  hosts: all
+  vars:
+    linux_locale_default_LC: ru_RU.UTF-8
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+  
+    - name: Fix multipath daemon error spamming system log
+      blockinfile:
+        path: /etc/multipath.conf
+        block: |
+          blacklist {
+            device {
+              vendor "VBOX"
+              product "HARDDISK"
+            }
+          }
+      become: yes
+      notify: Restart multipath daemon
+
+    - name: Add VLAN 101
+      copy:
+        dest: /etc/netplan/99-vlan-101.yaml
+        content: |
+          network:
+            vlans:
+              vlan.101:
+                id: 101
+                link: enp0s8
+                addresses: [192.168.101.2/24]
+      become: yes
+      register: vlan_101
+
+    - name: Apply VLAN 101 configuration
+      command:
+        /usr/sbin/netplan apply
+      become: yes
+      when: vlan_101.changed
+
+    - import_role: name=/opt/ansible-playbooks/linux-utils
+    - import_role: name=/opt/ansible-playbooks/linux-locale
+    - import_role: name=/opt/ansible-playbooks/linux-timezone
+    - import_role: name=/opt/ansible-playbooks/ovpn-client
+    - import_role: name=/opt/ansible-playbooks/router
+
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes
