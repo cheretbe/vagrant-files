@@ -1,0 +1,46 @@
+---
+- name: Setup common parameters
+  import_playbook: /opt/ansible-playbooks/linux_server_setup.yml
+
+- name: Docker server box provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Fix multipath daemon error spamming system log
+      blockinfile:
+        path: /etc/multipath.conf
+        block: |
+          blacklist {
+            device {
+              vendor "VBOX"
+              product "HARDDISK"
+            }
+          }
+      become: yes
+      notify: Restart multipath daemon
+
+    - include_role: name="/opt/ansible-playbooks/docker-ce"
+
+    - name: Install docker-compose-plugin package
+      apt:
+        name: docker-compose-plugin
+        update_cache: no
+      become: yes
+
+    - name: Add 'vagrant' user to 'docker' group
+      user:
+        name: vagrant
+        groups: docker
+        append: yes
+      become: yes
+
+  handlers:
+    - name: Restart multipath daemon
+      ansible.builtin.systemd:
+        name: multipathd
+        state: restarted
+      become: yes
