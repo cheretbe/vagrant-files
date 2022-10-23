@@ -4,6 +4,7 @@ local_settings = read_local_settings([
   {"name" => "win_memory", "default" => "4096"},
   {"name" => "win_cpus", "default" => "2"},
   {"name" => "bridged_adapter", "default" => nil},
+  {"name" => "private_adapter", "default" => nil},
   {"name" => "sound", "default" => false}
 ])
 
@@ -20,5 +21,9 @@ Vagrant.configure("2") do |config|
 
   unless local_settings.bridged_adapter.nil?
     add_bridged_adapter(config.vm, local_settings.bridged_adapter)
+  end
+
+  unless local_settings.private_adapter.nil?
+    add_private_adapter(config.vm, local_settings.private_adapter)
   end
 end

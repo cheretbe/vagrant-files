@@ -80,6 +80,11 @@ def add_bridged_adapter(vm, adapter_settings)
   vm.network("public_network", adapter_settings.transform_keys(&:to_sym))
 end
 
+def add_private_adapter(vm, adapter_settings)
+  # Convert hash keys from strings to symbols
+  vm.network("private_network", adapter_settings.transform_keys(&:to_sym))
+end
+
 def add_audio_controler(vb)
   audio_driver = case RUBY_PLATFORM
     when /linux/
