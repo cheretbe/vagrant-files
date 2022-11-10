@@ -24,19 +24,8 @@
       notify: Restart multipath daemon
 
     - include_role: name="/opt/ansible-playbooks/docker-ce"
-
-    - name: Install docker-compose-plugin package
-      apt:
-        name: docker-compose-plugin
-        update_cache: no
-      become: yes
-
-    - name: Add 'vagrant' user to 'docker' group
-      user:
-        name: vagrant
-        groups: docker
-        append: yes
-      become: yes
+      vars:
+        docker_ce_users: ["vagrant"]
 
   handlers:
     - name: Restart multipath daemon
