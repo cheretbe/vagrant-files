@@ -4,11 +4,15 @@ all:
     ansible_user: vagrant
   hosts:
     win10:
-      ansible_host: 192.168.80.42
+      ansible_host: 192.168.80.43
       ansible_connection: winrm
       ansible_port: "5985"
       ansible_winrm_transport: ntlm
     seafile-server:
       ansible_host: 192.168.80.41
       ansible_python_interpreter: /usr/bin/python3
+      ansible_ssh_pass: "vagrant"
+    seafile-client:
+      ansible_host: 192.168.80.42
+      # ansible_python_interpreter: /usr/bin/python3
       ansible_ssh_pass: "vagrant"

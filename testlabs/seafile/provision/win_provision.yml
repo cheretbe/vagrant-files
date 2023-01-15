@@ -11,5 +11,5 @@
     - name: Update hosts file
       community.windows.win_hosts:
         state: present
-        canonical_name: seafile.test.local
+        canonical_name: seafile.local.test
         ip_address: 192.168.80.41

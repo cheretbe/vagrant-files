@@ -1,0 +1,146 @@
+---
+- name: Linux box provision
+  hosts: all
+
+  vars:
+    deb_architecture_map:
+      "x86_64": "amd64"
+      "aarch64": "arm64"
+      "aarch": "arm64"
+      "armhf": "armhf"
+      "armv7l": "armhf"
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Update /etc/hosts
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          192.168.80.41 seafile.local.test
+      become: true
+
+    - name: Add Seafile repository key
+      get_url:
+        url: https://linux-clients.seafile.com/seafile.asc
+        dest: /etc/apt/trusted.gpg.d/seafile-keyring.asc
+      become: true
+
+    - name: Add Seafile repository
+      ansible.builtin.apt_repository:
+        repo: >
+          deb [arch={{ deb_architecture_map[ansible_architecture] }} signed-by=/etc/apt/trusted.gpg.d/seafile-keyring.asc]
+          https://linux-clients.seafile.com/seafile-deb/{{ ansible_distribution_release }}/ stable main
+        state: present
+      become: true
+
+    - name: Install packages
+      ansible.builtin.apt:
+        name: ["seafile-cli", "mc", "ncdu"]
+        update_cache: true
+        # 1 hour
+        cache_valid_time: 3600
+      become: true
+
+    - name: Create Seafile data directory
+      ansible.builtin.file:
+        path: /home/vagrant/seafile-client
+        state: directory
+        mode: '0755'
+
+    - name: Init Seafile client config directory
+      ansible.builtin.command: /usr/bin/seaf-cli init -d /home/vagrant/seafile-client
+      args:
+        creates: /home/vagrant/.ccnet
+
+    # When connecting to a server for the first time, seaf-cli outputs an extra
+    # message "New device id created", even with --json parameter present.
+    # To avoid breaking json output parsing, we call seaf-cli to make sure
+    # the id is created and no extra message will appear later on
+    - name: Make sure device id is created
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli list-remote
+        -s http://seafile.local.test
+        -u admin@seafile.local
+        -p {{ seafile_admin_password }}
+      changed_when: false
+
+    - name: List server libraries
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli list-remote
+        -s http://seafile.local.test
+        -u admin@seafile.local
+        -p {{ seafile_admin_password }}
+        --json
+      changed_when: false
+      register: existing_libraries
+
+    - name: Add test library
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli create
+          -n test-library-1
+          -s http://seafile.local.test
+          -u admin@seafile.local
+          -p {{ seafile_admin_password }}
+      when: (existing_libraries.stdout | from_json) | length == 0
+
+    # https://manual.seafile.com/deploy/start_seafile_at_system_bootup/#create-systemd-service-file-etcsystemdsystemseafile-clientservice-optional
+    - name: Create seafile-client systemd service
+      notify: "Restart seafile-client service"
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/seafile-client.service"
+        content: |
+          [Unit]
+          Description=Seafile client
+
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/seaf-cli start
+          ExecStop=/usr/bin/seaf-cli stop
+          RemainAfterExit=yes
+          User=vagrant
+          Group=vagrant
+
+          [Install]
+          WantedBy=multi-user.target
+        owner: root
+        group: root
+        mode: 0644
+      become: true
+
+    - name: Execute handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: List local libraries
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli list
+        --json
+      changed_when: false
+      register: existing_local_libraries
+
+    - name: Create local library data directory
+      ansible.builtin.file:
+        path: /home/vagrant/seafile-client/test-library-1
+        state: directory
+        mode: '0755'
+
+    - name: Enable local library sync
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli sync
+          -l {{ (existing_libraries.stdout | from_json)[0].id }}
+          -d /home/vagrant/seafile-client/test-library-1
+          -s http://seafile.local.test
+          -u admin@seafile.local
+          -p {{ seafile_admin_password }}
+      when: (existing_local_libraries.stdout | from_json) | length == 0
+
+  handlers:
+    - name: Restart seafile-client service
+      ansible.builtin.systemd:
+        name: seafile-client
+        daemon_reload: true
+        enabled: true
+        state: restarted
+      become: true
