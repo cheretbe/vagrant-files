@@ -39,7 +39,8 @@ Vagrant.configure("2") do |config|
     ansible_provision server,
       playbook="server_provision.yml",
       extra_vars: {
-        "dummy": "test"
+        "provision_docker_proxy": ENV["AO_VAGRANT_DOCKER_PROXY"] || false,
+        "provision_apt_proxy": ENV["AO_VAGRANT_APT_PROXY"] || false
       }
   end
 
