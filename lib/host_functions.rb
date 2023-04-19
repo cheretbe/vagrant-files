@@ -185,7 +185,7 @@ end
 # https://github.com/hashicorp/vagrant/blob/main/plugins/provisioners/ansible/provisioner/guest.rb
 def do_host_ansible_provision(machine, target_host, playbook, extra_vars: {})
   machine.ui.detail("Provisioning with Ansible playbook '#{playbook}'")
-  env_variables = "PYTHONUNBUFFERED=1"
+  env_variables = "PYTHONUNBUFFERED=1 ANSIBLE_SSH_RETRIES=3"
   env_variables += " ANSIBLE_FORCE_COLOR=true" if machine.env.ui.color?
 
   command = "#{env_variables} "\
@@ -196,6 +196,7 @@ def do_host_ansible_provision(machine, target_host, playbook, extra_vars: {})
   Vagrant.global_logger.info("Ansible command: #{command}")
 
   ansible_controller = machine.env.machine(:"ansible-controller", :virtualbox)
+  ansible_controller.communicate.execute("rm ~/.ssh/known_hosts", error_check: false)
   result = ansible_controller.communicate.execute(command, error_check: false) do |type, data|
     if [:stderr, :stdout].include?(type)
       machine.env.ui.info(data, new_line: false, prefix: false)
