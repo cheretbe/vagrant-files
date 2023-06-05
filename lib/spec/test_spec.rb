@@ -15,3 +15,11 @@ describe :"vm config test" do
     add_bridged_adapter(vm, config)
   end
 end
+
+describe "read_local_settings" do
+  it "does something" do
+    read_local_config_file = double(host_functions.read_local_config_file)
+    # read_local_config_file = double()
+    read_local_settings_test("dummy")
+  end
+end
