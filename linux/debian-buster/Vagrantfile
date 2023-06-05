@@ -1,0 +1,15 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpu", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+])
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "debian/buster64"
+  config.vm.hostname = "debian-buster-vm"
+  apply_standard_settings(config, "default", local_settings, no_synced_dirs: true)
+  config.vm.provision "shell", name: "Install gpg apt package",
+    keep_color: true,
+    inline: "DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -qq gpg"
+end
