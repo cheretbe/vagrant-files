@@ -1,4 +1,5 @@
 require "ostruct"
+require "yaml"
 
 class CustomAnsibleError < Vagrant::Errors::VagrantError
   error_message(
@@ -30,6 +31,51 @@ class CustomProvisionPlugin < Vagrant.plugin('2')
 end
 
 @vagrant_ui = Vagrant::UI::Colored.new
+
+def read_local_settings_new(settings)
+  missing_mandatory_settings = []
+
+  config_file_name = File.join(File.dirname(caller_locations.first.path), "local-config.yml")
+  local_config = {}
+  if File.file?(config_file_name)
+    Vagrant.global_logger.warn("Reading local config from #{config_file_name}")
+    local_config = YAML.load_file(config_file_name)
+    if local_config.nil?
+      local_config = {}
+    end
+  else
+    Vagrant.global_logger.warn("Local config file #{config_file_name} is missing")
+  end
+
+  settings.each do |setting|
+    setting = setting.transform_keys(&:to_s)
+    if not local_config.key?(setting["name"])
+      if setting.key?("default")
+        Vagrant.global_logger.warn("  Using default value '#{setting["default"]}' for '#{setting["name"]}' setting")
+        local_config[setting["name"]] = setting["default"]
+      else
+        missing_mandatory_settings.push(" - " + setting["name"])
+      end
+    end
+  end
+
+  if missing_mandatory_settings.length > 0
+    missing_msg = format("The following mandatory settings are not configured "\
+      "in '%s':\n%s", config_file_name, missing_mandatory_settings.join("\n"))
+    if ARGV[0] == "up"
+      @vagrant_ui.error (missing_msg + "\nAborting")
+      abort
+    else
+      @vagrant_ui.warn missing_msg
+    end
+  end
+
+  Vagrant.global_logger.warn("Final local config:")
+  local_config.each do |config_key, config_value|
+    Vagrant.global_logger.warn("  #{config_key} = #{config_value}")
+  end
+  return local_config
+end
 
 def read_local_settings(settings)
   missing_mandatory_settings = []
@@ -75,14 +121,48 @@ def read_local_settings(settings)
   return OpenStruct.new(return_value)
 end
 
-def add_bridged_adapter(vm, adapter_settings)
-  # Convert hash keys from strings to symbols
-  vm.network("public_network", adapter_settings.transform_keys(&:to_sym))
+def get_standard_setting(setting_name, vm_name, settings, &block)
+  setting = nil
+  if settings.key?(setting_name)
+    setting = settings[setting_name]
+  end
+  if settings.key?("#{setting_name}.#{vm_name}")
+    setting = settings["#{setting_name}.#{vm_name}"]
+  end
+  yield(setting)
 end
 
-def add_private_adapter(vm, adapter_settings)
-  # Convert hash keys from strings to symbols
-  vm.network("private_network", adapter_settings.transform_keys(&:to_sym))
+def apply_standard_settings(config, vm_name, settings, no_synced_dirs: false)
+  config.vm.provider("virtualbox") do |vb|
+    vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
+    get_standard_setting("memory", vm_name, settings) do |setting|
+      vb.memory = setting unless setting.nil?
+    end
+    get_standard_setting("cpus", vm_name, settings) do |setting|
+      vb.cpus = setting unless setting.nil?
+    end
+    get_standard_setting("sound", vm_name, settings) do |setting|
+      # nil is falsey, so there will be no sound if the setting is not present
+      add_audio_controler(vb) if setting
+    end
+  end
+  get_standard_setting("networks", vm_name, settings) do |networks|
+    unless networks.nil?
+      networks.each do |network|
+        network.each do |network_key, network_value|
+          # https://github.com/hashicorp/vagrant/blob/main/plugins/kernel_v2/config/vm.rb
+          # @param [Symbol] type Type of network
+          # @param [Hash] options Options for the network.
+          # def network(type, **options)
+          config.vm.network(network_key.to_sym, **network_value.transform_keys(&:to_sym))
+        end
+      end
+    end
+  end
+  unless no_synced_dirs
+    config.vm.synced_folder "/", "/host"
+    config.vm.synced_folder Dir.home, "/host_home"
+  end
 end
 
 def add_audio_controler(vb)
