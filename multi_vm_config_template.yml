@@ -1,22 +1,29 @@
 ---
 
 memory: 2048
-cpu: 2
+cpus: 2
 sound: false
 
-cpu.vm1: 1
-network.vm1:
-    # https://github.com/cheretbe/notes/blob/master/vagrant.md#networking
-    private_adapter:
+cpus.vm1: 1
+networks.vm1:
+  # https://github.com/cheretbe/notes/blob/master/vagrant.md#networking
+  - private_network:
       virtualbox__intnet: "vagrant-intnet"
       ip: "192.168.80.101"
-forwarded_ports.vm1:
-  - {host: 8080, guest: 80}
-  - {host: 8081, guest: 443}
+  - forwarded_port: {host: 8080, guest: 80}
+  - forwarded_port: {host: 8081, guest: 443}
 
 memory.vm2: 4096
 sound.vm2: true
-network.vm2:
-    private_adapter:
+networks.vm2:
+  - private_network:
       virtualbox__intnet: "vagrant-intnet"
       ip: "192.168.80.102"
+  - private_network:
+      virtualbox__intnet: "vagrant-intnet1"
+      ip: "192.168.81.102"
+  - public_network:
+      ip: "192.168.1.49"
+      bridge: "enp45s0"
+  - forwarded_port: {host: 8082, guest: 80}
+  - forwarded_port: {host: 8083, guest: 443}
