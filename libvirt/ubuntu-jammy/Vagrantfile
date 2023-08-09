@@ -1,0 +1,24 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpu", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+])
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2204"
+  # https://vagrant-libvirt.github.io/vagrant-libvirt/configuration.html
+  config.vm.provider :libvirt do |libvirt|
+    # libvirt.cpus = 1
+    # libvirt.memory = 1024
+    # qemu-system-x86_64 -machine help
+    libvirt.machine_type = "pc-i440fx-jammy"
+    libvirt.cpu_mode = "host-passthrough"
+    config.vm.hostname = "ubuntu-jammy-vm"
+  end
+
+  # config.vm.network :public_network, :dev => "enp0s31f6-br", :mode => "bridge", :type => "bridge"
+
+  # TODO: needs fixing (at least no shared folders)
+  # apply_standard_settings(config, "default", local_settings)
+end
