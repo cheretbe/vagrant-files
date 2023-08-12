@@ -146,6 +146,14 @@ def apply_standard_settings(config, vm_name, settings, no_synced_dirs: false)
       add_audio_controler(vb) if setting
     end
   end
+  config.vm.provider("libvirt") do |libvirt|
+    get_standard_setting("memory", vm_name, settings) do |setting|
+      libvirt.memory = setting unless setting.nil?
+    end
+    get_standard_setting("cpus", vm_name, settings) do |setting|
+      libvirt.cpus = setting unless setting.nil?
+    end
+  end
   get_standard_setting("networks", vm_name, settings) do |networks|
     unless networks.nil?
       networks.each do |network|
