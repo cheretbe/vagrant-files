@@ -9,6 +9,7 @@ libvirt.connect_via_ssh: true
 libvirt.username: "username"
 # Prepends $HOME/.ssh/ if no directory
 libvirt.id_ssh_key_file: "id_ed25519"
+libvirt.storage_pool_name: "hdd1"
 
 # networks:
 #   - public_network: {dev: "enp0s31f6-br", mode: "bridge", type: "bridge"}
