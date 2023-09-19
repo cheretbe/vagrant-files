@@ -2,7 +2,9 @@
 
 import argparse
 import json
+import os
 import subprocess
+import yaml
 
 # https://www.jeffgeerling.com/blog/creating-custom-dynamic-inventories-ansible
 
@@ -112,6 +114,9 @@ def build_vagrant_inventory():
                 inventory["_meta"]["hostvars"][vm["name"]] = get_windows_vars(vm["name"])
             else:
                 inventory["_meta"]["hostvars"][vm["name"]] = get_linux_vars(vm["name"])
+            if os.path.isfile(f"host_vars/{vm['name']}.yml"):
+                with open(f"host_vars/{vm['name']}.yml") as vars_f:
+                    inventory["_meta"]["hostvars"][vm["name"]].update(yaml.safe_load(vars_f))
 
     return inventory
 
