@@ -1,2 +1,3 @@
 /.vagrant/
 /local-config.yml
+/host_vars/

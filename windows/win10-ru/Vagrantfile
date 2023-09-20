@@ -1,29 +1,12 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
-local_settings = read_local_settings([
-  {"name" => "win_memory", "default" => "4096"},
-  {"name" => "win_cpus", "default" => "2"},
-  {"name" => "bridged_adapter", "default" => nil},
-  {"name" => "private_adapter", "default" => nil},
-  {"name" => "sound", "default" => false}
+local_settings = read_local_settings_new([
+  {"name" => "cpu", "default" => "2"},
+  {"name" => "memory", "default" => "4096"},
 ])
+
 
 Vagrant.configure("2") do |config|
   config.vm.box = "cheretbe/win10_gui"
-
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = local_settings.win_memory
-    vb.cpus = local_settings.win_cpus
-    if local_settings.sound
-      add_audio_controler(vb)
-    end
-  end
-
-  unless local_settings.bridged_adapter.nil?
-    add_bridged_adapter(config.vm, local_settings.bridged_adapter)
-  end
-
-  unless local_settings.private_adapter.nil?
-    add_private_adapter(config.vm, local_settings.private_adapter)
-  end
+  apply_standard_settings(config, "default", local_settings)
 end
