@@ -1,0 +1,12 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([])
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "cheretbe/routeros-long-term"
+
+  apply_standard_settings(config, "default", local_settings, no_synced_dirs: true)
+
+  config.vm.provision "routeros_command", name: "Internet access via host NAT",
+    command: '/ip dhcp-client set [find interface="host_nat"] use-peer-dns=yes add-default-route=yes'
+end
