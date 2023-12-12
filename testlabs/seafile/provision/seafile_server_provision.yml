@@ -1,5 +1,5 @@
 ---
-- name: Linux box provision
+- name: Seafile server provision
   hosts: all
 
   tasks:
@@ -7,39 +7,31 @@
       debug:
         msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
 
-    - name: Checkout shared docker configs repo
-      ansible.builtin.git:
-        repo: "https://github.com/cheretbe/docker-configs.git"
-        dest: "/opt/docker-configs"
+    - name: Make sure /root/.docker exists
+      ansible.builtin.file:
+        state: directory
+        path: /root/.docker
+        owner: root
+        group: root
+        mode: 0750
       become: true
 
-    - include_role: name="/opt/ansible-playbooks/docker-ce"
-      vars:
-        docker_ce_users: ["vagrant"]
-
+    # We don't use community.docker.docker_login because docker is not yet installed at this point
     - name: Add credentials for docker.seadrive.org
-      community.docker.docker_login:
-        registry_url: docker.seadrive.org
-        username: seafile
-        password: zjkmid6rQibdZ=uJMuWS
-
-    # As of 13.01.23 'docker_compose' module has a requirement: docker-compose >= 1.7.0, < 2.0.0
-    # https://docs.ansible.com/ansible/latest/collections/community/docker/docker_compose_module.html#ansible-collections-community-docker-docker-compose-module-requirements
-    # Therefore docker compose plugin v2.14.1, installed by 'docker-ce' role,
-    # can't be used. We need to install separate docker-compose binary and will
-    # use pip for it
-    - name: Install packages
-      ansible.builtin.apt:
-        name: ["python3-pip"]
-        update_cache: true
-        cache_valid_time: "{{ '1day' | community.general.to_seconds | int }}"
+      ansible.builtin.copy:
+        # https://customer.seafile.com/downloads/
+        # seafile:zjkmid6rQibdZ=uJMuWS
+        content: |
+          {
+            "auths": {
+              "docker.seadrive.org": {
+                "auth": "c2VhZmlsZTp6amttaWQ2clFpYmRaPXVKTXVXUw=="
+              }
+            }
+          }
+        dest: /root/.docker/config.json
+        mode: 0640
       become: true
 
-    - name: Install PIP modules
-      ansible.builtin.pip:
-        name: docker-compose
-      become: true
-
-    - name: Create and start Docker containers
-      community.docker.docker_compose:
-        project_src: /opt/docker-configs/seafile
+- name: Include docker_compose_services playbook
+  ansible.builtin.import_playbook: /opt/ansible-playbooks/docker_compose_services.yml

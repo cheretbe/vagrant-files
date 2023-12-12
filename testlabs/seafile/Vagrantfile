@@ -4,37 +4,32 @@ if not ENV.has_key?('AO_DEFAULT_VAGRANT_PASSWORD')
   abort "This Vagrantfile needs AO_DEFAULT_VAGRANT_PASSWORD environment variable to be defined. Aborting"
 end
 
-local_settings = read_local_settings([
-  {"name" => "win_memory", "default" => "4096"},
-  {"name" => "linux_memory", "default" => "2048"}
+local_settings = read_local_settings_new([
+  {"name" => "cpus", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+  {"name" => "cpus.seafile-client", "default" => "1"},
+  {"name" => "memory.seafile-client", "default" => "2048"},
+  {"name" => "memory.win10", "default" => "4096"},
+  {"name" => "common_repo_source", "default" => "master"}
 ])
 
 Vagrant.configure("2") do |config|
 
   define_ansible_controller(
     config=config,
-    ip="192.168.80.40"
-    # common_repo_source: local_settings.common_repo_source
-  ) do |ansible_controller|
-    ansible_controller.vm.provider "virtualbox" do |vb|
-      vb.memory = local_settings.linux_memory
-    end
-  end
+    ip="192.168.80.40",
+    common_repo_source: local_settings["common_repo_source"]
+  )
 
   config.vm.define :"seafile-server" do |seafile_server|
-    seafile_server.vm.box = "ubuntu/focal64"
+    # seafile_server.vm.box = "ubuntu/focal64"
+    seafile_server.vm.box = "ubuntu/jammy64"
     seafile_server.vm.hostname = "seafile.local.test"
-    seafile_server.vm.provider "virtualbox" do |vb|
-      vb.memory = local_settings.linux_memory
-      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-      vb.customize ["modifyvm", :id, "--uart1", "off"]
-      vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
-    end
+
+    apply_standard_settings(seafile_server, "seafile-server", local_settings)
 
     seafile_server.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.41"
     seafile_server.vm.network "forwarded_port", guest: 80, host: 8080
-    seafile_server.vm.synced_folder "/", "/host"
-    seafile_server.vm.synced_folder Dir.home, "/host_home"
 
     seafile_server.vm.provision "shell", name: "Enable cleartext passwords for SSH",
       keep_color: true,
@@ -47,23 +42,18 @@ Vagrant.configure("2") do |config|
     ansible_provision seafile_server,
       playbook="seafile_server_provision.yml",
       extra_vars: {
-        "seafile_version": "9.0.13"
+        "seafile_version": "9.0.13",
+        "docker_ce_registry_proxy": ENV["AO_VAGRANT_DOCKER_PROXY"] || false
       }
   end
 
   config.vm.define :"seafile-client" do |seafile_client|
     seafile_client.vm.box = "ubuntu/jammy64"
     seafile_client.vm.hostname = "seafile-client.local.test"
-    seafile_client.vm.provider "virtualbox" do |vb|
-      vb.memory = local_settings.linux_memory
-      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-      vb.customize ["modifyvm", :id, "--uart1", "off"]
-      vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
-    end
+
+    apply_standard_settings(seafile_client, "seafile-client", local_settings)
 
     seafile_client.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.42"
-    seafile_client.vm.synced_folder "/", "/host"
-    seafile_client.vm.synced_folder Dir.home, "/host_home"
 
     seafile_client.vm.provision "shell", name: "Enable cleartext passwords for SSH",
       keep_color: true,
@@ -74,31 +64,20 @@ Vagrant.configure("2") do |config|
       SHELL
 
     ansible_provision seafile_client,
-      playbook="seafile_client_provision.yml",
-      extra_vars: {
-        "seafile_admin_password": "TgCer3XNYi"
-      }
+      playbook="seafile_client_provision.yml"
   end
 
   config.vm.define "win10", autostart: false do |win10|
     win10.vm.box = "cheretbe/win10_gui"
 
-    win10.vm.provider "virtualbox" do |vb|
-      vb.memory = local_settings.win_memory
-      vb.cpus = "2"
-      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
-    end
+    apply_standard_settings(win10, "win10", local_settings)
 
     win10.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.43"
-    win10.vm.synced_folder "/", "/host"
-    win10.vm.synced_folder Dir.home, "/host_home"
 
     ansible_provision win10,
       playbook="win_provision.yml",
       extra_vars: {
-        "ansible_password": "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}",
-        "seafile_admin_password": "TgCer3XNYi"
+        "ansible_password": "#{ENV['AO_DEFAULT_VAGRANT_PASSWORD']}"
       }
   end
 end

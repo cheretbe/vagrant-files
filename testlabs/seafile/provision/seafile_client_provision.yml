@@ -1,5 +1,5 @@
 ---
-- name: Linux box provision
+- name: Seafile client provision
   hosts: all
 
   vars:
