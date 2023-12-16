@@ -86,6 +86,19 @@
           -p {{ seafile_admin_password }}
       when: (existing_libraries.stdout | from_json) | length == 0
 
+    - name: List server libraries after creation
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli list-remote
+        -s http://seafile.local.test
+        -u admin@seafile.local
+        -p {{ seafile_admin_password }}
+        --json
+      changed_when: false
+      # This mangles existing variable when task is being skipped:
+      # when: (existing_libraries.stdout | from_json) | length == 0
+      # So it's easier to just always run the task than to work around this feature.
+      register: existing_libraries
+
     # https://manual.seafile.com/deploy/start_seafile_at_system_bootup/#create-systemd-service-file-etcsystemdsystemseafile-clientservice-optional
     - name: Create seafile-client systemd service
       notify: "Restart seafile-client service"
@@ -112,6 +125,10 @@
 
     - name: Execute handlers
       ansible.builtin.meta: flush_handlers
+
+    - name: Set client name
+      ansible.builtin.command: >
+        /usr/bin/seaf-cli config -k client_name -v 'Vagrant Linux client'
 
     - name: List local libraries
       ansible.builtin.command: >
