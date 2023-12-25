@@ -20,6 +20,11 @@ all:
           env_variables:
             SEAFILE_IMAGE_VERSION: "9.0.13"
             MARIADB_IMAGE_VERSION: "10.3.34"
+          local_settings:
+           services:
+             db:
+               ports:
+                 - "3306:3306"
     seafile-client:
       ansible_host: 192.168.80.42
       ansible_ssh_pass: "vagrant"
