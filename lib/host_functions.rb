@@ -308,3 +308,13 @@ def ansible_provision(config, playbook, extra_vars: {})
     end
   end
 end
+
+def enable_ssh_clear_text_passwords(config)
+  config.vm.provision "shell", name: "Enable cleartext passwords for SSH",
+    keep_color: true,
+    inline: <<-SHELL
+      set -euo pipefail
+      sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      systemctl restart sshd
+    SHELL
+end
