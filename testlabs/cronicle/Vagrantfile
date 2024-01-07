@@ -1,0 +1,53 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpus", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+  {"name" => "cpus.cronicle-worker", "default" => "1"},
+  {"name" => "memory.cronicle-worker", "default" => "1024"},
+  {"name" => "common_repo_source", "default" => "master"},
+  {"name" => "local_docker_configs", "default" => false}
+])
+
+Vagrant.configure("2") do |config|
+
+  define_ansible_controller(
+    config=config,
+    ip="192.168.80.40",
+    common_repo_source: local_settings["common_repo_source"]
+  )
+
+  config.vm.define :"cronicle-server" do |cronicle_server|
+    cronicle_server.vm.box = "ubuntu/jammy64"
+    cronicle_server.vm.hostname = "cronicle.local.test"
+
+    apply_standard_settings(cronicle_server, "cronicle-server", local_settings)
+
+    cronicle_server.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.41"
+    cronicle_server.vm.network "forwarded_port", guest: 3012, host: 3012
+
+    enable_ssh_clear_text_passwords(cronicle_server)
+
+    ansible_provision cronicle_server,
+      playbook="cronicle_server_provision.yml",
+      extra_vars: {
+        "seafile_version": "9.0.13",
+        "docker_ce_registry_proxy": ENV["AO_VAGRANT_DOCKER_PROXY"] || false,
+        "dcs_debug_local_configs_source": local_settings["local_docker_configs"] ? "/host_home/projects/docker-configs" : nil
+      }
+  end
+
+  config.vm.define :"cronicle-worker" do |cronicle_worker|
+    cronicle_worker.vm.box = "ubuntu/jammy64"
+    cronicle_worker.vm.hostname = "cronicle-worker.local.test"
+
+    apply_standard_settings(cronicle_worker, "cronicle-worker", local_settings)
+
+    cronicle_worker.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.42"
+
+    enable_ssh_clear_text_passwords(cronicle_worker)
+
+    ansible_provision cronicle_worker,
+      playbook="cronicle_worker_provision.yml"
+  end
+end

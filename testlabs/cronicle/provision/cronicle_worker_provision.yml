@@ -1,0 +1,23 @@
+---
+- name: Cronicle worker provision
+  hosts: all
+
+  vars:
+    deb_architecture_map:
+      "x86_64": "amd64"
+      "aarch64": "arm64"
+      "aarch": "arm64"
+      "armhf": "armhf"
+      "armv7l": "armhf"
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+# TODO:
+# https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-22-04
+#   https://nodejs.org/en/about/previous-releases
+# https://github.com/jhuckaby/Cronicle/blob/master/docs/Setup.md
+#   curl -s https://raw.githubusercontent.com/jhuckaby/Cronicle/master/bin/install.js | node
+

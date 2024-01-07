@@ -1,0 +1,18 @@
+---
+- name: Cronicle server provision
+  hosts: all
+
+  tasks:
+    - name: Print host information
+      debug:
+        msg: "{{ ansible_fqdn }}: {{ ansible_distribution }} {{ ansible_distribution_version}}"
+
+    - name: Update /etc/hosts
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          192.168.80.42 cronicle-worker.local.test
+      become: true
+
+- name: Include docker_compose_services playbook
+  ansible.builtin.import_playbook: /opt/ansible-playbooks/docker_compose_services.yml
