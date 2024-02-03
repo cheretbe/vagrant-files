@@ -315,6 +315,12 @@ def enable_ssh_clear_text_passwords(config)
     inline: <<-SHELL
       set -euo pipefail
       sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      # /etc/ssh/sshd_config.d/60-cloudimg-settings.conf might as well contain
+      # 'PasswordAuthentication no' setting
+      if [ -e /etc/ssh/sshd_config.d/*.conf ]; then
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/*.conf
+      fi
       systemctl restart sshd
     SHELL
 end
