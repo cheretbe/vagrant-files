@@ -1,46 +1,39 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
-local_settings = read_local_settings([
-  {"name" => "ovpn_server_protocol", "default" => "udp"},
+check_env_variables(
+  mandatory_vars: ["TF_VAR_yc_token"],
+  optional_vars:["TF_VAR_cf_api_token"]
+)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpus", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
   {"name" => "common_repo_source", "default" => "master"}
 ])
 
-# local_settings = read_local_settings([])
 
 Vagrant.configure("2") do |config|
   define_ansible_controller(
     config=config,
     ip="192.168.80.70",
-    common_repo_source: local_settings.common_repo_source
+    common_repo_source: local_settings["common_repo_source"]
   )
 
   config.vm.define :"terraform" do |terraform|
-    terraform.vm.box = "ubuntu/focal64"
+    terraform.vm.box = "ubuntu/jammy64"
     terraform.vm.hostname = "terraform"
-    terraform.vm.provider "virtualbox" do |vb|
-      vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
-      vb.customize ["modifyvm", :id, "--uart1", "off"]
-      vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
-    end
 
-    terraform.vm.network "private_network", ip: "192.168.80.71",
-      virtualbox__intnet: "vagrant-intnet" #, mac: "080027840F13"
+    apply_standard_settings(terraform, "terraform", local_settings)
 
-    terraform.vm.synced_folder "/", "/host"
-    terraform.vm.synced_folder Dir.home, "/host_home"
+    terraform.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.71"
 
-    terraform.vm.provision "shell", name: "Enable cleartext passwords for SSH",
-      keep_color: true,
-      inline: <<-SHELL
-        set -euo pipefail
-        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-        systemctl restart sshd
-      SHELL
+    enable_ssh_clear_text_passwords(terraform)
 
     ansible_provision terraform,
       playbook="terraform_provision.yml",
       extra_vars: {
-        "dummy": "test"
+        TF_VAR_yc_token: ENV["TF_VAR_yc_token"],
+        TF_VAR_cf_api_token: ENV["TF_VAR_cf_api_token"] || nil
       }
   end
 end

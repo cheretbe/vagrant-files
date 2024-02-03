@@ -2,8 +2,9 @@
 all:
   vars:
     ansible_user: vagrant
+    ansible_ssh_pass: vagrant
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
   hosts:
     terraform:
       ansible_host: 192.168.80.71
       ansible_python_interpreter: /usr/bin/python3
-      ansible_ssh_pass: "vagrant"
