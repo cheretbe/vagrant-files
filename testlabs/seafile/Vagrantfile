@@ -1,8 +1,8 @@
 require File.expand_path("../../../lib/host_functions.rb", __FILE__)
 
-if not ENV.has_key?('AO_DEFAULT_VAGRANT_PASSWORD')
-  abort "This Vagrantfile needs AO_DEFAULT_VAGRANT_PASSWORD environment variable to be defined. Aborting"
-end
+check_env_variables(
+  mandatory_vars: ["AO_DEFAULT_VAGRANT_PASSWORD"]
+)
 
 local_settings = read_local_settings_new([
   {"name" => "cpus", "default" => "2"},
