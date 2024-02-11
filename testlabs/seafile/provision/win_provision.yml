@@ -13,3 +13,51 @@
         state: present
         canonical_name: seafile.local.test
         ip_address: 192.168.80.41
+
+    - name: Get latest released Seafile client version info
+      ansible.windows.win_uri:
+        url: https://api.github.com/repos/haiwen/seafile-client/releases/latest
+        return_content: yes
+      register: __wp_client_latest_release_info
+
+    - name: Set Seafile client version fact
+      ansible.builtin.set_fact:
+        # Remove leading 'v' (e.g. v9.0.4 > 9.0.4)
+        _wp_client_version: "{{ __wp_client_latest_release_info.json.tag_name[1:] }}"
+
+    # https://www.seafile.com/en/download/
+    - name: Seafile client package installation
+      ansible.windows.win_package:
+        path: https://s3.eu-central-1.amazonaws.com/download.seadrive.org/seafile-{{ _wp_client_version }}-en.msi
+        product_id: "{02B98A70-EE81-45EE-9EEE-D73468D10B87}"
+        state: present
+        # Default is "C:\Program Files\Seafile\"
+        # arguments: 'INSTALLDIR="C:\custom\directory\"'
+
+    - name: Get seafile.ini information
+      ansible.windows.win_stat:
+        path: 'C:\Users\vagrant\seafile.ini'
+      register: __wp_seafile_ini_info
+
+    - name: Obtain auth token for admin@seafile.local user
+      ansible.windows.win_uri:
+        # https://cloud.seafile.com/published/web-api/home.md
+        url: http://seafile.local.test/api2/auth-token/
+        method: POST
+        content_type: application/x-www-form-urlencoded
+        body: "username=admin@seafile.local&password={{ seafile_admin_password }}"
+        return_content: yes
+      register: __wp_seafile_token
+      when: not __wp_seafile_ini_info.stat.exists
+
+    - name: Write seafile.ini
+      ansible.windows.win_copy:
+        # https://help.seafile.com/faq/#using-seafileini-windows-or-seafilerc-linuxmac
+        content: |
+          [preconfigure]
+          PreconfigureDirectory = ~/
+          PreconfigureUsername = admin@seafile.local
+          PreconfigureUserToken = {{ __wp_seafile_token.json.token }}
+          PreconfigureServerAddr = http://seafile.local.test
+        dest: 'C:\Users\vagrant\seafile.ini'
+      when: not __wp_seafile_ini_info.stat.exists
