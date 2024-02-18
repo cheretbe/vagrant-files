@@ -31,13 +31,7 @@ Vagrant.configure("2") do |config|
     seafile_server.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.41"
     seafile_server.vm.network "forwarded_port", guest: 80, host: 8080
 
-    seafile_server.vm.provision "shell", name: "Enable cleartext passwords for SSH",
-      keep_color: true,
-      inline: <<-SHELL
-        set -euo pipefail
-        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-        systemctl restart sshd
-      SHELL
+    enable_ssh_clear_text_passwords(seafile_server)
 
     ansible_provision seafile_server,
       playbook="seafile_server_provision.yml",
@@ -55,13 +49,7 @@ Vagrant.configure("2") do |config|
 
     seafile_client.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.42"
 
-    seafile_client.vm.provision "shell", name: "Enable cleartext passwords for SSH",
-      keep_color: true,
-      inline: <<-SHELL
-        set -euo pipefail
-        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-        systemctl restart sshd
-      SHELL
+    enable_ssh_clear_text_passwords(seafile_client)
 
     ansible_provision seafile_client,
       playbook="seafile_client_provision.yml"
@@ -73,6 +61,9 @@ Vagrant.configure("2") do |config|
     apply_standard_settings(win10, "win10", local_settings)
 
     win10.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.43"
+
+    win10.vm.provision "shell", name: "Disable Windows Update",
+      keep_color: true, path: "../../lib/disable_windows_update.ps1"
 
     ansible_provision win10,
       playbook="win_provision.yml",
