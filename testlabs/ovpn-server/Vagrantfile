@@ -51,7 +51,7 @@ Vagrant.configure("2") do |config|
         "ovpn_server_ca_cert":      "/vagrant/temp/test-ca/ca.crt",
         "ovpn_server_cert":         "/vagrant/temp/test-ca/keys/server.crt",
         "ovpn_server_key":          "/vagrant/temp/test-ca/keys/server.key",
-        "ovpn_server_ta_key":       "/vagrant/temp/test-ca/ta.key",
+        # "ovpn_server_ta_key":       "/vagrant/temp/test-ca/keys/optional_ta.key",
         "ovpn_server_dns_name":     "vpn.example.com",
         "ovpn_server_protocol":     local_settings["ovpn_server_protocol"],
         "ovpn_server_dns_resolver": local_settings["ovpn_server_dns_resolver"],
