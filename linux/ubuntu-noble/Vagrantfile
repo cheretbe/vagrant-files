@@ -6,7 +6,10 @@ local_settings = read_local_settings_new([
 ])
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/noble64"
+  # Canonical will no longer publish Vagrant images directly starting with Ubuntu 24.04 LTS (Noble Numbat)
+  # https://documentation.ubuntu.com/public-images/en/latest/public-images-explanation/vagrant/#support
+  # https://github.com/chef/bento
+  config.vm.box = "bento/ubuntu-24.04"
   config.vm.hostname = "ubuntu-noble-vm"
   apply_standard_settings(config, "default", local_settings)
 end
