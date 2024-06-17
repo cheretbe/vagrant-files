@@ -1,8 +1,11 @@
 ---
 
-memory: 2048
-cpus: 2
-sound: false
+# Valid options are: "master", "develop", "local" (symlink to /host_home/projects/ansible-playbooks)
+# common_repo_source: develop # default is master
+
+#memory: 2048
+#cpus: 2
+#sound: false
 
 cpus.vm1: 1
 networks.vm1:
