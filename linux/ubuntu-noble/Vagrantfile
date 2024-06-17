@@ -1,0 +1,12 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpu", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+])
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/noble64"
+  config.vm.hostname = "ubuntu-noble-vm"
+  apply_standard_settings(config, "default", local_settings)
+end
