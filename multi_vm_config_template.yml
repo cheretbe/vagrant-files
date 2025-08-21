@@ -3,9 +3,14 @@
 # Valid options are: "master", "develop", "local" (symlink to /host_home/projects/ansible-playbooks)
 # common_repo_source: develop # default is master
 
-#memory: 2048
-#cpus: 2
-#sound: false
+# memory: 2048
+# cpus: 2
+# sound: false
+# ssh_insert_key: true
+# networks:
+#   # We don't need auto_correct: true most of the time
+#   - forwarded_port: {host: 2022, guest: 22, host_ip: "0.0.0.0", id: "ssh"}
+
 
 cpus.vm1: 1
 networks.vm1:

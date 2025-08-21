@@ -132,7 +132,7 @@ def get_standard_setting(setting_name, vm_name, settings, &block)
   yield(setting)
 end
 
-def apply_standard_settings(config, vm_name, settings, no_synced_dirs: false)
+def apply_standard_settings(config, vm_name, settings, no_synced_dirs: false, apt_gpg_fix: false)
   config.vm.provider("virtualbox") do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     get_standard_setting("memory", vm_name, settings) do |setting|
@@ -167,9 +167,20 @@ def apply_standard_settings(config, vm_name, settings, no_synced_dirs: false)
       end
     end
   end
+  get_standard_setting("ssh_insert_key", vm_name, settings) do |setting|
+    config.ssh.insert_key = setting unless setting.nil?
+  end
   unless no_synced_dirs
     config.vm.synced_folder "/", "/host"
     config.vm.synced_folder Dir.home, "/host_home"
+  end
+  if apt_gpg_fix
+    config.vm.provision "shell", name: "Install gpg apt package",
+      keep_color: true,
+      inline: <<-SHELL
+        DEBIAN_FRONTEND=noninteractive apt-get update -qq
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gpg
+      SHELL
   end
 end
 
