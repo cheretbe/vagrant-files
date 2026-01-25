@@ -46,3 +46,33 @@
             force: true
           become: true
       when: common_repo_source == "local"
+
+    - name: Generate ed25519 SSH key pair
+      community.crypto.openssh_keypair:
+        path: /home/vagrant/.ssh/vagrant_ansible.key
+        type: ed25519
+        comment: "ansible-controller vagrant user"
+        mode: '0600'
+
+    - name: Ensure local inventory directory exists
+      ansible.builtin.file:
+        path: /vagrant/provision/local
+        state: directory
+
+    - name: Copy public key to shared location
+      ansible.builtin.copy:
+        src: /home/vagrant/.ssh/vagrant_ansible.key.pub
+        dest: /vagrant/provision/local/vagrant_ansible.key.pub
+        mode: '0644'
+        remote_src: true
+
+    - name: Create ansible.cfg in vagrant home
+      ansible.builtin.copy:
+        content: |
+          [defaults]
+          interpreter_python = auto_silent
+          private_key_file = /home/vagrant/.ssh/vagrant_ansible.key
+          [ssh_connection]
+          ssh_args = -o StrictHostKeyChecking=accept-new
+        dest: /home/vagrant/ansible.cfg
+        mode: '0644'
