@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
     seafile_server.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.41"
     seafile_server.vm.network "forwarded_port", guest: 80, host: 8080
 
-    enable_ssh_clear_text_passwords(seafile_server)
+    configure_host_ssh(seafile_server)
 
     ansible_provision seafile_server,
       playbook="seafile_server_provision.yml",
@@ -49,7 +49,7 @@ Vagrant.configure("2") do |config|
 
     seafile_client.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.42"
 
-    enable_ssh_clear_text_passwords(seafile_client)
+    configure_host_ssh(seafile_client)
 
     ansible_provision seafile_client,
       playbook="seafile_client_provision.yml"

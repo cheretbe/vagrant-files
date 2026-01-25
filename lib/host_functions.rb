@@ -320,7 +320,7 @@ def ansible_provision(config, playbook, extra_vars: {})
   end
 end
 
-def enable_ssh_clear_text_passwords(config)
+def configure_host_ssh(config)
   config.vm.provision "shell", name: "Enable cleartext passwords for SSH",
     keep_color: true,
     inline: <<-SHELL
@@ -333,5 +333,23 @@ def enable_ssh_clear_text_passwords(config)
         sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/*.conf
       fi
       systemctl restart sshd
+    SHELL
+
+  config.vm.provision "shell", name: "Add ansible controller SSH key to authorized_keys",
+    keep_color: true,
+    privileged: false,
+    inline: <<-SHELL
+      set -euo pipefail
+      # mkdir -p ~/.ssh
+      # chmod 700 ~/.ssh
+      # touch ~/.ssh/authorized_keys
+      # chmod 600 ~/.ssh/authorized_keys
+      if [ -f /vagrant/provision/local/vagrant_ansible.key.pub ]; then
+        pub_key=$(cat /vagrant/provision/local/vagrant_ansible.key.pub)
+        if ! grep -qF "$pub_key" ~/.ssh/authorized_keys; then
+          echo "Adding ansible controller public key to authorized_keys"
+          echo "$pub_key" >> ~/.ssh/authorized_keys
+        fi
+      fi
     SHELL
 end

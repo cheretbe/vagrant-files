@@ -27,7 +27,7 @@ Vagrant.configure("2") do |config|
 
     terraform.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.71"
 
-    enable_ssh_clear_text_passwords(terraform)
+    configure_host_ssh(terraform)
 
     ansible_provision terraform,
       playbook="terraform_provision.yml",
