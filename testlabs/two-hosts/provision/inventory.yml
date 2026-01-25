@@ -1,0 +1,15 @@
+---
+all:
+  vars:
+    ansible_user: vagrant
+  hosts:
+    host1:
+      ansible_host: 192.168.90.81
+      ansible_python_interpreter: /usr/bin/python3
+      etc_hosts_entries:
+        - {ip: 192.168.90.82, value: "host2.local.test host2"}
+    host2:
+      ansible_host: 192.168.90.82
+      ansible_python_interpreter: /usr/bin/python3
+      etc_hosts_entries:
+        - {ip: 192.168.90.81, value: "host1.local.test host1"}

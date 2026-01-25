@@ -1,0 +1,48 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpus", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+  {"name" => "common_repo_source", "default" => "master"},
+])
+
+Vagrant.configure("2") do |config|
+
+  define_ansible_controller(
+    config=config,
+    ip="192.168.90.80",
+    common_repo_source: local_settings["common_repo_source"]
+  )
+
+  config.vm.define :host1 do |host1|
+    host1.vm.box = "bento/debian-13"
+    host1.vm.hostname = "host1"
+
+    apply_standard_settings(host1, "host1", local_settings)
+
+    host1.vm.network "private_network", virtualbox__intnet: "vagrant-intnet",
+      ip: "192.168.90.81"
+
+    configure_host_ssh(host1)
+
+    ansible_provision host1,
+      playbook="host_provision.yml",
+      extra_vars: {}
+  end
+
+  config.vm.define :host2 do |host2|
+    host2.vm.box = "bento/debian-13"
+    host2.vm.hostname = "host2"
+
+    apply_standard_settings(host2, "host2", local_settings)
+
+    host2.vm.network "private_network", virtualbox__intnet: "vagrant-intnet",
+      ip: "192.168.90.82"
+
+    configure_host_ssh(host2)
+
+    ansible_provision host2,
+      playbook="host_provision.yml",
+      extra_vars: {}
+  end
+end
