@@ -8,7 +8,24 @@ local_settings = read_local_settings_new([
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/buster64"
   config.vm.hostname = "debian-buster-vm"
+  config.vm.synced_folder ".", "/vagrant", disabled: true
   apply_standard_settings(config, "default", local_settings, no_synced_dirs: true)
+  config.vm.provision "shell", name: "Use Debian Buster archive repositories",
+    keep_color: true,
+    inline: <<-SHELL
+      set -euo pipefail
+      sed -i \
+        -e 's|https://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' \
+        -e 's|https://deb.debian.org/debian|http://archive.debian.org/debian|g' \
+        /etc/apt/sources.list
+      find /etc/apt/sources.list.d -type f -name '*.list' -exec sed -i \
+        -e 's|https://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' \
+        -e 's|https://deb.debian.org/debian|http://archive.debian.org/debian|g' \
+        {} +
+      printf 'Acquire::Check-Valid-Until "false";\n' \
+        > /etc/apt/apt.conf.d/99archive-debian-buster
+      DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    SHELL
   config.vm.provision "shell", name: "Install gpg apt package",
     keep_color: true,
     inline: "DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -qq gpg"
