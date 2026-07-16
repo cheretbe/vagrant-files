@@ -1,0 +1,26 @@
+require File.expand_path("../../../lib/host_functions.rb", __FILE__)
+
+local_settings = read_local_settings_new([
+  {"name" => "cpu", "default" => "2"},
+  {"name" => "memory", "default" => "2048"},
+])
+
+Vagrant.configure("2") do |config|
+  # debian/trixie64 doesn't have virtualbox provider
+  # https://portal.cloud.hashicorp.com/vagrant/discover/debian/trixie64
+  # https://github.com/chef/bento
+  # TODO: consider using cloud-image/debian-13 as it is being published more
+  #       frequently (it uses cloud-init though)
+  config.vm.box = "bento/debian-13"
+  config.vm.hostname = "debian-trixie-vm"
+  # Bento's cleanup removes /var/cache files, including Debconf's database.
+  # This discards grub-pc's install target and breaks noninteractive upgrades.
+  # Restore the disk hosting /boot before package provisioning starts.
+  config.vm.provision "shell", name: "Set GRUB install disk", inline: <<-SHELL
+    set -eu
+    boot_partition=$(grub-probe --target=device /boot)
+    boot_disk="/dev/$(lsblk --noheadings --output PKNAME "$boot_partition")"
+    printf 'grub-pc grub-pc/install_devices multiselect %s\n' "$boot_disk" | debconf-set-selections
+  SHELL
+  apply_standard_settings(config, "default", local_settings)
+end

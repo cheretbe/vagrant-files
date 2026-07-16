@@ -1,0 +1,4 @@
+/.vagrant/
+*.log
+/local-config.yml
+/host_vars/
