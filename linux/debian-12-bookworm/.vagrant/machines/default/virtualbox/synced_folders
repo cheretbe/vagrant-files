@@ -1,0 +1,1 @@
+{"virtualbox":{"/host":{"guestpath":"/host","hostpath":"/","disabled":false,"__vagrantfile":true},"/host_home":{"guestpath":"/host_home","hostpath":"/home/npa","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"/home/npa/projects/vagrant-files/linux/debian-12-bookworm","disabled":false,"__vagrantfile":true}}}

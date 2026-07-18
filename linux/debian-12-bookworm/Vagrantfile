@@ -6,7 +6,7 @@ local_settings = read_local_settings_new([
 ])
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/jammy64"
-  config.vm.hostname = "ubuntu-jammy-vm"
-  apply_standard_settings(config, "default", local_settings)
+  config.vm.box = "debian/bookworm64"
+  config.vm.hostname = "debian-12-bookworm-vm"
+  apply_standard_settings(config, "default", local_settings, apt_gpg_fix: true)
 end

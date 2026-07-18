@@ -1,13 +1,13 @@
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/xenial64"
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
     vb.customize ["modifyvm", :id, "--uart1", "off"]
     vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"]
     vb.memory = "2048"
   end
-  config.vm.hostname = "ubuntu-bionic-vm"
-  config.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.21"
+  config.vm.hostname = "ubuntu-16-04-xenial-vm"
+  config.vm.network "private_network", virtualbox__intnet: "vagrant-intnet", ip: "192.168.80.20"
   config.vm.synced_folder "/", "/host"
   config.vm.synced_folder Dir.home, "/host_home"
 end

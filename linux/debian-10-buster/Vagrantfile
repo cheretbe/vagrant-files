@@ -7,7 +7,7 @@ local_settings = read_local_settings_new([
 
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/buster64"
-  config.vm.hostname = "debian-buster-vm"
+  config.vm.hostname = "debian-10-buster-vm"
   config.vm.synced_folder ".", "/vagrant", disabled: true
   apply_standard_settings(config, "default", local_settings, no_synced_dirs: true)
   config.vm.provision "shell", name: "Use Debian Buster archive repositories",
